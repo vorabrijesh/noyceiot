@@ -6,12 +6,12 @@ At first, make sure your CUDA_INSTALL_DIR and CUDNN_INSTALL_DIR are all set. The
 cd /usr/src/tensorrt/samples
 sudo make TARGET=aarch64
 ```
-Now we can convert a pre-trained NN model to a TensorRT engine and run the inference on the Jetson Nano using the trtexec command.
+Now we can convert a pre-trained NN model to a TensorRT engine and run the inference on the Jetson Nano using the *trtexec* command.
 ```
 cd /usr/src/tensorrt/bin
 ```
 Let's download the architecture of a pre-trained model of ResNet50 from [https://drive.google.com/file/d/1X-RmNVEMYlak_HKWzUjCLgxpklHHjz-L/view?usp=sharing].
-We can provide pre-trained as well via an argument to the trtexec command.
+We can provide pre-trained weights as well via an argument to the trtexec command.
 
 ```
 sudo trtexec --deploy=absolute/path/to/resnet50.prototxt --model=absoulte/path/to/resnet50.caffemodel --output=prob --batch=1 --saveEngine=resnet50.trt
