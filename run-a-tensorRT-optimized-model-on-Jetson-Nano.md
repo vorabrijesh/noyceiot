@@ -21,4 +21,8 @@ Which we can run by the following command where the inference is fed with an arb
 ```
 trtexec --loadEngine=resnet50.trt --batch=1
 ```
-We can play with *trtexec* command arguments by studying ```trtexec --help``` command!
+We can play with *trtexec* command arguments by studying ```trtexec --help```!
+
+**References**
+[https://forums.developer.nvidia.com/t/deep-learning-inference-benchmarking-instructions/73291]
+[https://github.com/NVIDIA/TensorRT/blob/master/samples/opensource/trtexec/README.md]
