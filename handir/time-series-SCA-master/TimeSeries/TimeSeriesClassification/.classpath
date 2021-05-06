@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry excluding="statistics/" kind="src" path="src"/>
+	<classpathentry kind="src" path="src/statistics"/>
+	<classpathentry kind="lib" path="dist/lib/libsvm.jar"/>
+	<classpathentry kind="lib" path="dist/lib/SizeOf.jar"/>
+	<classpathentry kind="lib" path="GavinHackCollateResults.jar"/>
+	<classpathentry kind="lib" path="hppc-0.8.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="jtransforms-2.4.jar"/>
+	<classpathentry kind="lib" path="jxl.jar"/>
+	<classpathentry kind="lib" path="lib/matlabcontrol-4.1.0.jar"/>
+	<classpathentry kind="lib" path="liblinear-java-2.11.jar"/>
+	<classpathentry kind="lib" path="libsvm.jar"/>
+	<classpathentry kind="lib" path="ResultsProcessing.jar"/>
+	<classpathentry kind="lib" path="SizeOf.jar"/>
+	<classpathentry kind="lib" path="xgboost4j-0.8-SNAPSHOT-jar-with-dependencies.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

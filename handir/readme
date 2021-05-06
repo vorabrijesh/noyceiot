@@ -1,0 +1,7 @@
+this directory is code from Han(Jane) Wang: hjlwang@ucdavis.edu
+
+
+-----------Classification Code
+time-series-SCA-master contains java code of time-series classifiers, including DTW, BOP, Shaplet and etc. Eclipse is suggested as IDE tool
+
+----------------
