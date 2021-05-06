@@ -1,0 +1,4 @@
+dataset_index=(11)
+split=(0.3)
+bats=(128 4 16 4)
+lcn=(128 0 16 16)

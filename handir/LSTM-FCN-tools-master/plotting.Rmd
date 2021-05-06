@@ -1,0 +1,2175 @@
+---
+title: "ROCAUC and other plots"
+author: "snd"
+date: "11/21/2018"
+output: html_document
+---
+
+# Load libraries
+
+```{r, include=FALSE}
+library("devtools")
+# install_github("sndean/packageSets")
+library(packageSets)
+packageSet(all)
+```
+
+# Functions
+
+```{r}
+read_rocauc <- function(base_path, dataset_name){
+  rocauc_out <- read_csv(paste(base_path, dataset_name, '/ROCAUC/ROCAUCs_1.csv', sep = ''), col_names = FALSE) %>% 
+    bind_rows(., read_csv(paste(base_path, dataset_name, '/ROCAUC/ROCAUCs_2.csv', sep = ''), col_names = FALSE)) %>%
+    bind_rows(., read_csv(paste(base_path, dataset_name, '/ROCAUC/ROCAUCs_3.csv', sep = ''), col_names = FALSE)) %>% 
+    na.omit() %>% 
+    rename('dataset' = X1,
+           'model' = X2,
+           'micro' = X3,
+           'macro' = X4)
+  return(rocauc_out)
+}
+```
+
+
+
+
+
+
+
+# Experiments / data from 111918-112518
+
+
+## Optimizing LCN for ALSTM-FCN
+
+ALSTM_FCN_batchsize_optimization_111918
+
+Constant: model = 3; batch size = 32.
+
+Looped over 128 64 32 16 8 4 LCN
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 3
+p <- '~/results/ALSTM_FCN_batchsize_optimization_111918/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'LSTM cell number', y = 'average AUC', title = 'ALSTM-FCN, 1000 epochs, LCN optimization')
+```
+
+
+### Optimizing batch size for ALSTM-FCN
+
+ALSTM_FCN_batchsize_optimization_111918
+
+Constant: model = 3; LCN = 32.
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 3
+p <- '~/results/ALSTM_FCN_batchsize_optimization_111918/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'ALSTM-FCN, 1000 epochs, LCN optimization')
+```
+
+
+
+
+
+## Optimizing LCN for LSTM-FCN
+
+LSTM_FCN_LCN_optimization_111918
+
+Constant: model = 2; batch size = 32.
+
+Looped over 128 64 32 16 8 4 LCN
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 2
+p <- '~/results/LSTM_FCN_LCN_optimization_111918/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'LSTM cell number', y = 'average AUC', title = 'LSTM-FCN, 1000 epochs, LCN optimization')
+```
+
+
+### Optimizing batch size for LSTM-FCN
+
+LSTM_FCN_batchsize_optimization_111918
+
+Constant: model = 2; LCN = 32.
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 2
+p <- '~/results/LSTM_FCN_batchsize_optimization_111918/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'LSTM-FCN, 1000 epochs, LCN optimization')
+```
+
+
+
+
+
+
+## Optimizing LCN for FCN??
+
+There's no LCN to optimize for FCN
+
+
+
+### Optimizing batch size for FCN
+
+FCN_batchsize_optimization_111918
+
+Constant: model = 1; LCN = none
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 1
+p <- '~/results/FCN_batchsize_optimization_111918/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'FCN, 1000 epochs, LCN optimization')
+```
+
+
+
+
+
+
+
+## Optimizing LCN for LSTM
+
+LSTM_LCN_optimization_112018
+
+Constant: model = 0; batch size = 32.
+
+Looped over 128 64 32 16 8 4 LCNs
+
+
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 0
+p <- '~/results/LSTM_LCN_optimization_112018/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'LSTM cell number', y = 'average AUC', title = 'LSTM, 1000 epochs, LCN optimization')
+```
+
+
+
+
+
+
+### Optimizing batch size for LSTM
+
+LSTM_batchsize_optimization_112018
+
+Constant: model = 0; LCN = 128.
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 0
+p <- '~/results/LSTM_batchsize_optimization_112018/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.width=10}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(k~dataset_label, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'LSTM, 1000 epochs, LCN optimization')
+```
+
+
+
+
+
+
+
+
+
+
+## 112018 ROCAUC boxplots 
+
+
+```{r, warning=FALSE, message=FALSE}
+p <- '~/results/rocauc_boxplot_112018/'
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+combined
+```
+
+```{r}
+replacement_vec <- c("0"="LSTM", "1"="FCN", "2"="LSTM-FCN", "3"="ALSTM-FCN")
+combined$model <- str_replace_all(combined$model, replacement_vec)
+```
+
+
+```{r, fig.height=9, fig.width=4}
+combined %>% 
+  # select(model, micro, macro, dataset_label) %>% 
+  select(model, micro, dataset_label) %>% 
+  gather(k, v, -model, -dataset_label) %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(model, v, fill = model), color = 'black') +
+  facet_grid(dataset_label~., scales = 'free_y') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Model', y = 'micro-average AUC') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  expand_limits(y=1)
+```
+
+
+
+
+## 112018 plotting ROC curves
+
+
+```{r}
+path <- '~/results/rocauc_boxplot_112018/Seawater/rep_ROC/'
+
+LDA <- read_csv(paste(path, 'Seawater_LDA_micro_macro.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_0_micro_macro.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_1_micro_macro.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_2_micro_macro.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_3_micro_macro.csv', sep = ''))
+combined <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+
+
+```{r, fig.height=4, fig.width=6}
+combined %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+```{r}
+path <- '~/results/rocauc_boxplot_112018/Seawater_4cats/rep_ROC/'
+
+
+LDA <- read_csv(paste(path, 'Seawater_4cats_LDA_micro_macro.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_4cats_0_micro_macro.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_4cats_1_micro_macro.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_2_micro_macro.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_3_micro_macro.csv', sep = ''))
+combined1 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined1 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+```{r}
+path <- '~/results/rocauc_boxplot_112018/Explosives/rep_ROC/'
+
+LDA <- read_csv(paste(path, 'Explosives_LDA_micro_macro.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_0_micro_macro.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_1_micro_macro.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_2_micro_macro.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3_micro_macro.csv', sep = ''))
+combined2 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined2 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+```{r}
+path <- '~/results/rocauc_boxplot_112018/Explosives_3cats/rep_ROC/'
+
+LDA <- read_csv(paste(path, 'Explosives_3cats_LDA_micro_macro.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_3cats_0_micro_macro.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_3cats_1_micro_macro.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_2_micro_macro.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_3_micro_macro.csv', sep = ''))
+combined3 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined3 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+
+
+
+
+
+### Faceted micro
+
+```{r}
+combined4 <- bind_rows(`Seawater (11 classes)` = combined, 
+                      `Seawater (4 classes)` = combined1,
+                      `Explosives (11 classes)` = combined2,
+                      `Explosives (3 classes)` = combined3,
+                      .id = 'dataset_label')
+```
+
+```{r, fig.height=9, fig.width=5}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+### Faceted macro
+
+
+```{r, fig.height=9, fig.width=5}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_macro, tpr_macro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ROC curves with errors
+
+roc_curves_with_error_112418
+
+
+```{r, message=FALSE}
+base_path <- '~/results/roc_curves_with_error2_112418/'
+
+path <- 'Explosives_3cats/ROCs/'
+
+dataset <- 'Explosives_3cats'
+
+LDA <- read_csv(paste(base_path, path, dataset, '_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(base_path, path, dataset, '_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(base_path, path, dataset, '_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(base_path, path, dataset, '_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(base_path, path, dataset, '_3_micro_macro_1.csv', sep = ''))
+combined1 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+
+LDA <- read_csv(paste(base_path, path, dataset, '_LDA_micro_macro_2.csv', sep = ''))
+LSTM <- read_csv(paste(base_path, path, dataset, '_0_micro_macro_2.csv', sep = ''))
+FCN <- read_csv(paste(base_path, path, dataset, '_1_micro_macro_2.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(base_path, path, dataset, '_2_micro_macro_2.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(base_path, path, dataset, '_3_micro_macro_2.csv', sep = ''))
+combined2 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+
+LDA <- read_csv(paste(base_path, path, dataset, '_LDA_micro_macro_3.csv', sep = ''))
+LSTM <- read_csv(paste(base_path, path, dataset, '_0_micro_macro_3.csv', sep = ''))
+FCN <- read_csv(paste(base_path, path, dataset, '_1_micro_macro_3.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(base_path, path, dataset, '_2_micro_macro_3.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(base_path, path, dataset, '_3_micro_macro_3.csv', sep = ''))
+combined3 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+
+LDA <- read_csv(paste(base_path, path, dataset, '_LDA_micro_macro_4.csv', sep = ''))
+LSTM <- read_csv(paste(base_path, path, dataset, '_0_micro_macro_4.csv', sep = ''))
+FCN <- read_csv(paste(base_path, path, dataset, '_1_micro_macro_4.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(base_path, path, dataset, '_2_micro_macro_4.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(base_path, path, dataset, '_3_micro_macro_4.csv', sep = ''))
+combined4 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+
+LDA <- read_csv(paste(base_path, path, dataset, '_LDA_micro_macro_5.csv', sep = ''))
+LSTM <- read_csv(paste(base_path, path, dataset, '_0_micro_macro_5.csv', sep = ''))
+FCN <- read_csv(paste(base_path, path, dataset, '_1_micro_macro_5.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(base_path, path, dataset, '_2_micro_macro_5.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(base_path, path, dataset, '_3_micro_macro_5.csv', sep = ''))
+combined5 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r}
+combined <- bind_rows(`1` = combined1, 
+                      `2` = combined2,  
+                      `3` = combined3,
+                      `4` = combined4,  
+                      `5` = combined5, 
+                      .id = 'rep_label')
+```
+
+
+```{r}
+combined 
+```
+
+
+
+```{r, fig.height=4, fig.width=5}
+combined %>% 
+  select(X1, model, rep_label, fpr_micro, tpr_micro) %>% 
+  filter(model == 'LSTM') %>% 
+  ggplot() +
+  theme_bw(base_size = 16) +
+  geom_line(aes(fpr_micro, tpr_micro, color = rep_label), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) +
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+```{r, fig.height=4, fig.width=5}
+combined %>% 
+  select(X1, model, rep_label, fpr_micro, tpr_micro) %>% 
+  filter(model == 'LSTM') %>% 
+  group_by(X1) %>%
+  summarize(
+    fpr_mean = mean(fpr_micro),
+    tpr_mean = mean(tpr_micro)
+    ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) +
+  geom_line(aes(fpr_mean, tpr_mean), color = 'black', size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) +
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+## Using SE
+
+```{r, fig.height=4, fig.width=5.5}
+combined %>% 
+  select(X1, model, rep_label, fpr_micro, tpr_micro) %>% 
+  filter(model == 'LSTM' | model == 'LDA' | model == 'FCN') %>% 
+  group_by(X1, model) %>%
+  summarize(
+    fpr_mean = mean(fpr_micro),
+    tpr_mean = mean(tpr_micro),
+    sd_fpr_micro = sd(fpr_micro),
+    sd_tpr_micro = sd(tpr_micro),
+    n_micro = n()
+    ) %>%
+  mutate(
+    se_fpr_micro = sd_fpr_micro / sqrt(n_micro),
+    se_tpr_micro = sd_tpr_micro / sqrt(n_micro),
+    lower_ci_fpr_micro = fpr_mean - qt(1 - (0.05 / 2), n_micro - 1) * se_fpr_micro,
+    upper_ci_fpr_micro = fpr_mean + qt(1 - (0.05 / 2), n_micro - 1) * se_fpr_micro,
+    lower_ci_tpr_micro = tpr_mean - qt(1 - (0.05 / 2), n_micro - 1) * se_tpr_micro,
+    upper_ci_tpr_micro = tpr_mean + qt(1 - (0.05 / 2), n_micro - 1) * se_tpr_micro
+    ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) +
+  geom_line(aes(fpr_mean, tpr_mean, color = model), size = 1) +
+  geom_ribbon(aes(ymin = (tpr_mean - se_tpr_micro),
+                  ymax = (tpr_mean + se_tpr_micro),
+                  x=fpr_mean, fill=model), alpha = 0.1)+
+  guides(fill = FALSE) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) +
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+## Using 95CI
+
+```{r, fig.height=4, fig.width=6}
+combined %>% 
+  select(X1, model, rep_label, fpr_micro, tpr_micro) %>% 
+  filter(model == 'LSTM' | model == 'LDA' | model == 'FCN') %>% 
+  group_by(X1, model) %>%
+  summarize(
+    fpr_mean = mean(fpr_micro),
+    tpr_mean = mean(tpr_micro),
+    sd_fpr_micro = sd(fpr_micro),
+    sd_tpr_micro = sd(tpr_micro),
+    n_micro = n()
+    ) %>%
+  mutate(
+    se_fpr_micro = sd_fpr_micro / sqrt(n_micro),
+    se_tpr_micro = sd_tpr_micro / sqrt(n_micro),
+    lower_ci_fpr_micro = fpr_mean - qt(1 - (0.05 / 2), n_micro - 1) * se_fpr_micro,
+    upper_ci_fpr_micro = fpr_mean + qt(1 - (0.05 / 2), n_micro - 1) * se_fpr_micro,
+    lower_ci_tpr_micro = tpr_mean - qt(1 - (0.05 / 2), n_micro - 1) * se_tpr_micro,
+    upper_ci_tpr_micro = tpr_mean + qt(1 - (0.05 / 2), n_micro - 1) * se_tpr_micro
+    ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) +
+  geom_line(aes(fpr_mean, tpr_mean, color = model), size = 1.5) +
+  geom_ribbon(aes(ymin = lower_ci_tpr_micro,
+                  ymax = upper_ci_tpr_micro,
+                  x=fpr_mean, fill=model), alpha = 0.2)+
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) +
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# pROC and/or hmeasure
+
+```{r}
+path <- '~/results/rocauc_boxplot_112018/Seawater_4cats/rep_ROC/'
+
+
+LDA <- read_csv(paste(path, 'Seawater_4cats_LDA_micro_macro.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_4cats_0_micro_macro.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_4cats_1_micro_macro.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_2_micro_macro.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_3_micro_macro.csv', sep = ''))
+combined1 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+
+
+```{r}
+combined1
+```
+
+
+
+```{r}
+# install.packages('hmeasure')
+# if (! requireNamespace("devtools")) install.packages("devtools")
+devtools::install_github("xrobin/pROC")
+# library(scales)
+library(pROC)
+library(hmeasure)
+```
+
+
+pROC:
+
+https://github.com/xrobin/pROC
+
+
+
+H measure:
+
+https://cran.r-project.org/web/packages/hmeasure/index.html
+https://www.hmeasure.net/
+
+
+```{r}
+data(aSAH)
+```
+
+```{r}
+aSAH
+```
+
+```{r}
+roc(aSAH$outcome, aSAH$s100b)
+roc(outcome ~ s100b, aSAH)
+```
+
+
+
+
+```{r}
+roc(outcome ~ s100b, aSAH, smooth=TRUE) 
+```
+
+```{r}
+roc1 <- roc(aSAH$outcome, aSAH$s100b, percent=TRUE)
+    # Add to an existing plot. Beware of 'percent' specification!
+roc2 <- roc(aSAH$outcome, aSAH$wfns, percent=roc1$percent)        
+```
+
+```{r}
+coords(roc1, "best", ret=c("threshold", "specificity", "1-npv"))
+coords(roc2, "local maximas", ret=c("threshold", "sens", "spec", "ppv", "npv"))
+```
+
+
+
+```{r, fig.height=4, fig.width=4}
+bind_cols(a = roc1$sensitivities, b = roc1$specificities) %>% 
+  ggplot() +
+  geom_line(aes(100-b, a))
+```
+
+
+```{r}
+roc1
+```
+
+
+```{r}
+# Of the AUC
+ci(roc2)
+```
+
+```{r}
+# Test on the whole AUC
+roc.test(roc1, roc2, reuse.auc=FALSE)
+```
+
+
+
+
+```{r}
+combined1
+```
+
+```{r}
+combined1 %>% 
+  filter(model == 'LDA') %>% 
+  ggplot() +
+  geom_line(aes(fpr_micro, tpr_micro))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Results from 120818
+
+## 120818 ROCAUC boxplots 
+
+
+```{r, warning=FALSE, message=FALSE}
+p <- '~/Desktop/including_reports_120818/'
+
+combined <- bind_rows(`11-SW` = read_rocauc(p, 'Seawater'), 
+                      `4-SW` = read_rocauc(p, 'Seawater_4cats'), 
+                      `11-EXP` = read_rocauc(p, 'Explosives'), 
+                      `3-EXP` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+combined
+```
+
+```{r}
+combined <- combined %>% 
+  filter(!model == 'PCASVM') 
+```
+
+
+
+```{r}
+replacement_vec <- c("0"="LSTM", "1"="FCN", "2"="LSTM-FCN", "3"="ALSTM-FCN")
+combined$model <- str_replace_all(combined$model, replacement_vec)
+```
+
+
+```{r, fig.height=9, fig.width=4}
+combined %>% 
+  # select(model, micro, macro, dataset_label) %>% 
+  select(model, micro, dataset_label) %>% 
+  gather(k, v, -model, -dataset_label) %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(model, v, fill = model), color = 'black') +
+  facet_grid(dataset_label~., scales = 'free_y') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Model', y = 'micro-average AUC') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  expand_limits(y=1)
+```
+
+
+
+
+## 120818 plotting ROC curves
+
+
+```{r}
+path <- '~/Desktop/including_reports_120818/Seawater/ROCs/'
+
+LDA <- read_csv(paste(path, 'Seawater_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_3_micro_macro_1.csv', sep = ''))
+combined <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+
+
+```{r, fig.height=4, fig.width=6}
+combined %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_120818/Seawater_4cats/ROCs/'
+
+
+LDA <- read_csv(paste(path, 'Seawater_4cats_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_4cats_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_4cats_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_3_micro_macro_1.csv', sep = ''))
+combined1 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined1 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_120818/Explosives/ROCs/'
+
+LDA <- read_csv(paste(path, 'Explosives_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3_micro_macro_1.csv', sep = ''))
+combined2 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined2 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_120818/Explosives_3cats/ROCs/'
+
+LDA <- read_csv(paste(path, 'Explosives_3cats_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_3cats_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_3cats_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_3_micro_macro_1.csv', sep = ''))
+combined3 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined3 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+
+
+
+
+
+### Faceted micro
+
+```{r}
+combined4 <- bind_rows(`11-SW` = combined, 
+                      `4-SW` = combined1,
+                      `11-EXP` = combined2,
+                      `3-EXP` = combined3,
+                      .id = 'dataset_label')
+```
+
+```{r, fig.height=9, fig.width=5.25}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+### Faceted macro
+
+
+```{r, fig.height=9, fig.width=5}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_macro, tpr_macro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+
+
+
+
+
+
+
+
+# Results including 121118
+
+## 121118 ROCAUC boxplots 
+
+
+```{r, warning=FALSE, message=FALSE}
+p <- '~/Desktop/including_reports_121118/'
+
+combined <- bind_rows(`11-SW` = read_rocauc(p, 'Seawater'), 
+                      `4-SW` = read_rocauc(p, 'Seawater_4cats'), 
+                      `11-EXP` = read_rocauc(p, 'Explosives'), 
+                      `3-EXP` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+combined
+```
+
+```{r}
+combined <- combined %>% 
+  filter(!model == 'PCASVM') 
+```
+
+
+
+```{r}
+replacement_vec <- c("0"="LSTM", "1"="FCN", "2"="LSTM-FCN", "3"="ALSTM-FCN")
+combined$model <- str_replace_all(combined$model, replacement_vec)
+```
+
+
+```{r, fig.height=9, fig.width=4}
+combined %>% 
+  # select(model, micro, macro, dataset_label) %>% 
+  select(model, micro, dataset_label) %>% 
+  gather(k, v, -model, -dataset_label) %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(model, v, fill = model), color = 'black') +
+  facet_grid(dataset_label~., scales = 'free_y') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Model', y = 'micro-average AUC') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  expand_limits(y=1)
+```
+
+
+
+
+## 121118 plotting ROC curves
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Seawater/ROCs/'
+
+LDA <- read_csv(paste(path, 'Seawater_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_3_micro_macro_1.csv', sep = ''))
+combined <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+
+
+```{r, fig.height=4, fig.width=6}
+combined %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Seawater_4cats/ROCs/'
+
+
+LDA <- read_csv(paste(path, 'Seawater_4cats_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_4cats_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_4cats_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_4cats_3_micro_macro_1.csv', sep = ''))
+combined1 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined1 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Explosives/ROCs/'
+
+LDA <- read_csv(paste(path, 'Explosives_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3_micro_macro_1.csv', sep = ''))
+combined2 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined2 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Explosives_3cats/ROCs/'
+
+LDA <- read_csv(paste(path, 'Explosives_3cats_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_3cats_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_3cats_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_3_micro_macro_1.csv', sep = ''))
+combined3 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined3 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+
+
+
+
+
+### Faceted micro
+
+```{r}
+combined4 <- bind_rows(`11-SW` = combined, 
+                      `4-SW` = combined1,
+                      `11-EXP` = combined2,
+                      `3-EXP` = combined3,
+                      .id = 'dataset_label')
+```
+
+```{r, fig.height=9, fig.width=5.25}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+### Faceted macro
+
+
+```{r, fig.height=9, fig.width=5}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_macro, tpr_macro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+
+
+
+
+
+
+
+## 121118 ROCAUC raw numbers
+
+
+```{r, warning=FALSE, message=FALSE}
+p <- '~/Desktop/including_reports_121118/'
+
+combined <- bind_rows(`11-SW` = read_rocauc(p, 'Seawater'), 
+                      `4-SW` = read_rocauc(p, 'Seawater_4cats'), 
+                      `11-EXP` = read_rocauc(p, 'Explosives'), 
+                      `3-EXP` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+combined
+
+combined <- combined %>% 
+  filter(!model == 'PCASVM') 
+
+replacement_vec <- c("0"="LSTM", "1"="FCN", "2"="LSTM-FCN", "3"="ALSTM-FCN")
+combined$model <- str_replace_all(combined$model, replacement_vec)
+```
+
+
+```{r}
+combined %>% 
+  # select(model, micro, macro, dataset_label) %>% 
+  select(model, micro, dataset_label) %>% 
+  gather(k, v, -model, -dataset_label) %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  filter(k == 'micro') %>% 
+  group_by(model, dataset_label) %>% 
+  summarise(
+    med = median(v),
+    IQR = IQR(v)
+  ) %>% 
+  write_csv('med_iqr_rocauc_table.csv')
+
+# %>% 
+  # arrange(desc(med))
+
+    
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<<<<<<< HEAD
+
+
+
+
+
+
+
+=======
+>>>>>>> 0e40ad47f0f10191178e9eb19219a5fd24789085
+# Seawater_all and Seawater_all4cats, plus results including 121118
+
+## 012119 ROCAUC boxplots 
+
+
+```{r, warning=FALSE, message=FALSE}
+p <- '~/Desktop/including_reports_121118/'
+
+combined <- bind_rows(`11-SW` = read_rocauc(p, 'Seawater'), 
+                      `4-SW` = read_rocauc(p, 'Seawater_4cats'), 
+                      `11-EXP` = read_rocauc(p, 'Explosives'), 
+                      `3-EXP` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+combined
+```
+
+```{r}
+combined <- combined %>% 
+  filter(!model == 'PCASVM') 
+```
+
+
+
+```{r}
+replacement_vec <- c("0"="LSTM", "1"="FCN", "2"="LSTM-FCN", "3"="ALSTM-FCN")
+combined$model <- str_replace_all(combined$model, replacement_vec)
+```
+
+
+```{r, fig.height=9, fig.width=4}
+combined %>% 
+  # select(model, micro, macro, dataset_label) %>% 
+  select(model, micro, dataset_label) %>% 
+  gather(k, v, -model, -dataset_label) %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(model, v, fill = model), color = 'black') +
+  facet_grid(dataset_label~., scales = 'free_y') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=18, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Model', y = 'micro-average AUC') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  expand_limits(y=1)
+```
+
+
+
+
+## 121118 plotting ROC curves
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Seawater/ROCs/'
+
+LDA <- read_csv(paste(path, 'Seawater_all_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_all_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_all_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_all_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_all_3_micro_macro_1.csv', sep = ''))
+combined <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+
+
+```{r, fig.height=4, fig.width=6}
+combined %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Seawater_4cats/ROCs/'
+
+
+LDA <- read_csv(paste(path, 'Seawater_all4cats_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Seawater_all4cats_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Seawater_all4cats_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Seawater_all4cats_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Seawater_all4cats_3_micro_macro_1.csv', sep = ''))
+combined1 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined1 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Explosives/ROCs/'
+
+LDA <- read_csv(paste(path, 'Explosives_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3_micro_macro_1.csv', sep = ''))
+combined2 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined2 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+```{r}
+path <- '~/Desktop/including_reports_121118/Explosives_3cats/ROCs/'
+
+LDA <- read_csv(paste(path, 'Explosives_3cats_LDA_micro_macro_1.csv', sep = ''))
+LSTM <- read_csv(paste(path, 'Explosives_3cats_0_micro_macro_1.csv', sep = ''))
+FCN <- read_csv(paste(path, 'Explosives_3cats_1_micro_macro_1.csv', sep = ''))
+LSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_2_micro_macro_1.csv', sep = ''))
+ALSTM_FCN <- read_csv(paste(path, 'Explosives_3cats_3_micro_macro_1.csv', sep = ''))
+combined3 <- bind_rows(LDA=LDA, 
+                      LSTM=LSTM,
+                      FCN=FCN,
+                      `LSTM-FCN`=LSTM_FCN,
+                      `ALSTM-FCN`=ALSTM_FCN,
+                      .id = 'model')
+```
+
+```{r, fig.height=4, fig.width=6}
+combined3 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+
+
+
+
+
+### Faceted micro
+
+```{r}
+combined4 <- bind_rows(`11-SW` = combined, 
+                      `4-SW` = combined1,
+                      `11-EXP` = combined2,
+                      `3-EXP` = combined3,
+                      .id = 'dataset_label')
+```
+
+```{r, fig.height=9, fig.width=5.25}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) + 
+  geom_line(aes(fpr_micro, tpr_micro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+### Faceted macro
+
+
+```{r, fig.height=9, fig.width=5}
+combined4 %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 16) + 
+  geom_line(aes(fpr_macro, tpr_macro, color = model), size = 1.5) +
+  facet_grid(dataset_label~., scales = 'free') +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = 'black', linetype = 'dashed', size = 0.5) + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate', color = '') +
+  theme(axis.text = element_text(size=12, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(color = "black", family="Arial"), 
+        strip.background = element_blank())
+```
+
+
+
+
+
+
+
+
+
+## 121118 ROCAUC raw numbers
+
+
+```{r, warning=FALSE, message=FALSE}
+p <- '~/Desktop/including_reports_121118/'
+
+combined <- bind_rows(`11-SW` = read_rocauc(p, 'Seawater'), 
+                      `4-SW` = read_rocauc(p, 'Seawater_4cats'), 
+                      `11-EXP` = read_rocauc(p, 'Explosives'), 
+                      `3-EXP` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+combined
+
+combined <- combined %>% 
+  filter(!model == 'PCASVM') 
+
+replacement_vec <- c("0"="LSTM", "1"="FCN", "2"="LSTM-FCN", "3"="ALSTM-FCN")
+combined$model <- str_replace_all(combined$model, replacement_vec)
+```
+
+
+```{r}
+combined %>% 
+  # select(model, micro, macro, dataset_label) %>% 
+  select(model, micro, dataset_label) %>% 
+  gather(k, v, -model, -dataset_label) %>% 
+  mutate(
+    model = factor(model, levels = c('LDA', 'LSTM', 'FCN', 'LSTM-FCN', 'ALSTM-FCN')),
+    dataset_label = factor(dataset_label, levels = c('4-SW', 
+                                                     '11-SW',
+                                                     '3-EXP',
+                                                     '11-EXP')
+                           )
+  ) %>% 
+  filter(k == 'micro') %>% 
+  group_by(model, dataset_label) %>% 
+  summarise(
+    med = median(v),
+    IQR = IQR(v)
+  ) %>% 
+  write_csv('med_iqr_rocauc_table.csv')
+
+# %>% 
+  # arrange(desc(med))
+
+    
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<<<<<<< HEAD
+
+
+
+
+
+
+
+
+
+
+=======
+>>>>>>> 0e40ad47f0f10191178e9eb19219a5fd24789085

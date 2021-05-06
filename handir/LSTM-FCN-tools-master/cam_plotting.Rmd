@@ -1,0 +1,648 @@
+---
+title: "CAM and context vector plotting"
+author: "snd"
+date: "12/7/2018"
+output: html_document
+---
+
+
+```{r, include=FALSE}
+library("devtools")
+# install_github("sndean/packageSets")
+library(packageSets)
+packageSet(all)
+library(stringi)
+```
+
+
+
+# Check distribution
+
+```{r}
+read_csv('weights/Explosives_3cats_1_0_cam_1.csv') %>% 
+  ggplot() +
+  geom_histogram(aes(`0`), binwidth = 2)
+```
+
+
+
+
+
+
+
+
+
+
+
+# Plot time series
+
+```{r}
+read_csv('weights/Explosives_3cats_2_1_cam_1.csv') %>% 
+  ggplot() +
+  geom_line(aes(X1,`0`), size = 0.8) +
+  theme_classic(base_size = 18) +
+  # scale_y_reverse() +
+  labs(x = 'Potential', y = 'Current') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+# Plot CAM
+
+```{r}
+read_csv('weights/Explosives_3cats_2_2_cam_2.csv') %>% 
+  ggplot() +
+  geom_line(aes(X1,`1`), size = 0.8) +
+  theme_classic(base_size = 18) +
+  # scale_y_reverse() +
+  labs(x = 'Index', y = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Faceting
+
+`datasetprefix_model_class_cam_1or2`
+
+If 3 classes: 0, 1, 2
+
+
+```{r}
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Explosives_3cats/'
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+```
+
+
+```{r}
+explosives_3cats$file <- mapvalues(explosives_3cats$file, 
+                                   from = unique(explosives_3cats$file), 
+                                   to = c("A", "B", "C")
+                                   )
+```
+
+
+
+
+
+```{r}
+explosives_3cats %>%
+  ggplot() +
+  geom_line(aes(X1, `1`), size = 0.8) +  ####### `0` or `1`
+  theme_classic(base_size = 18) +
+  facet_grid(file~., scales = 'free') +
+  labs(x = 'Index', y = '') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+```
+
+
+
+
+## Faceting over dataset classes and CAMs
+
+
+### Explosives_3cats
+
+```{r}
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Explosives_3cats/'
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats_dataset <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '1.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats_cams <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats <- bind_cols(explosives_3cats_dataset, explosives_3cats_cams)
+
+explosives_3cats$file <- mapvalues(explosives_3cats$file, 
+                                   from = unique(explosives_3cats$file), 
+                                   to = c("A", "B", "C")
+)
+
+
+explosives_3cats %>% 
+  select(file, X1, `11`, `0`) %>% 
+  rename(Data = `0`,
+         CAM = `11`) %>% 
+  gather(k, v, -X1, -file) %>% 
+  mutate(
+    k = factor(k, levels=c('Data', 'CAM'))
+  ) %>% 
+  ggplot() +
+  geom_line(aes(X1, v), size = 0.8) +
+  theme_bw(base_size = 18) +
+  facet_grid(k~file, scales = 'free') +
+  labs(x = 'Index', y = '', title = '                                           Class') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+  
+```
+
+
+
+
+
+
+### Seawater
+
+```{r, fig.width=3, fig.height=12}
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Seawater/'
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats_dataset <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '1.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats_cams <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats <- bind_cols(explosives_3cats_dataset, explosives_3cats_cams)
+
+explosives_3cats$file <- mapvalues(explosives_3cats$file, 
+                                   from = unique(explosives_3cats$file), 
+                                   to = c("A", "B", "C", "D", "E", "F", "G", "H",
+                                          "I", "J", "K")
+)
+
+
+explosives_3cats %>% 
+  select(file, X1, `11`, `0`) %>% 
+  rename(Data = `0`,
+         CAM = `11`) %>% 
+  gather(k, v, -X1, -file) %>% 
+  mutate(
+    k = factor(k, levels=c('Data', 'CAM'))
+  ) %>% 
+  filter(k == 'Data') %>% 
+  # filter(k == 'CAM') %>%
+  ggplot() +
+  geom_line(aes(X1, v), size = 0.8) +
+  theme_bw(base_size = 18) +
+  facet_grid(rows = vars(file)) +
+  # scale_y_continuous(limits = c(-2.5, 1)) + 
+  labs(x = 'Index', y = '', title = '                                           Class') +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+# Start from here (031219)
+
+## Heatmap overlap with the dataset
+
+Using gurbani2018 as an example
+
+probably use grid.arrange to make the heatmap scale separate for each
+
+make sure manual labeling is correct
+
+
+### EXP-3
+
+    python preprocessor.py -d ../unedited_data/Explosives_3cats.csv -p Explosives_3cats -c 0.3
+    python trainer.py -d 11 -m 3 -r 1 -p Explosives_3cats -e 500
+
+```{r}
+# classes <- read_delim('../data/Explosives_3cats_labels.txt', delim=",", col_names = FALSE) %>% 
+#   str_replace("'", "") %>% 
+#   str_replace(" ", "") %>% 
+#   str_replace("'", "") %>% 
+#   stri_replace_all_fixed("[", "") %>% 
+#   stri_replace_all_fixed("]", "")
+```
+
+```{r, fig.height=8, fig.width=6}
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Explosives_3cats/'
+classes <- c('A', 'B', 'C')
+
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats_dataset <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '1.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats_cams <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats <- bind_cols(explosives_3cats_dataset, explosives_3cats_cams)
+
+explosives_3cats$file <- mapvalues(explosives_3cats$file, 
+                                   from = unique(explosives_3cats$file), 
+                                   to = classes
+)
+
+
+
+
+plist <- lapply(classes, function(i) 
+  explosives_3cats %>% 
+  select(file, X1, `11`, `0`) %>% 
+  rename(Data = `0`,
+         CAM = `11`) %>%
+  filter(file == i) %>% 
+  mutate(
+    CAM = (CAM-min(CAM))/(max(CAM)-min(CAM))
+  ) %>% 
+  ggplot() +
+  geom_bar(aes(x=X1, y=-50, fill=CAM), stat="identity", width=1.5) +
+  geom_bar(aes(x=X1, y=50, fill=CAM), stat="identity", width=1.5) +
+  geom_line(aes(X1, Data), size = 1.2) + 
+  scale_fill_distiller(palette = "Spectral") +
+  theme_classic(base_size = 18) +
+  labs(x = 'Index', y = '', title = i) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+)
+
+g <- grid.arrange(plist[[1]], plist[[2]], plist[[3]], 
+             nrow = 3, ncol = 1)
+
+ggsave(file="EXP3.tiff", g, dpi = 600)
+```
+
+
+
+
+
+
+
+
+
+
+### SW-11
+
+    python preprocessor.py -d ../unedited_data/Seawater.csv -p Seawater -c 0.3
+    python trainer.py -d 8 -m 2 -r 1 -p Seawater -e 1000
+
+```{r}
+# classes <- read_delim('../data/Seawater_labels.txt', delim=",", col_names = FALSE) %>% 
+#   str_replace("'", "") %>% 
+#   str_replace(" ", "") %>% 
+#   str_replace("'", "") %>% 
+#   stri_replace_all_fixed("[", "") %>% 
+#   stri_replace_all_fixed("]", "")
+```
+
+
+```{r, fig.width=6, fig.height=27.5}
+# ```{r, fig.width=16, fig.height=10}
+# 
+
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Seawater/'
+classes <- c('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11')
+classes <- c('BPA', 'MeP', 'Cd', 'Pb', 'Cu', 'DQ', 'HMM', 'Hg', 'Seawater', 'NP', 'PQ')
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats_dataset <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '1.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats_cams <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats <- bind_cols(explosives_3cats_dataset, explosives_3cats_cams)
+
+explosives_3cats$file <- mapvalues(explosives_3cats$file, 
+                                   from = unique(explosives_3cats$file), 
+                                   to = classes
+)
+
+plist <- lapply(classes, function(i) 
+  explosives_3cats %>% 
+  select(file, X1, `11`, `0`) %>% 
+  rename(Data = `0`,
+         CAM = `11`) %>%
+  filter(file == i) %>% 
+  mutate(
+    CAM = (CAM-min(CAM))/(max(CAM)-min(CAM))
+  ) %>% 
+  ggplot() +
+  geom_bar(aes(x=X1, y=-60, fill=CAM), stat="identity", width=1.5) +
+  geom_bar(aes(x=X1, y=25, fill=CAM), stat="identity", width=1.5) +
+  geom_line(aes(X1, Data), size = 1.2) + 
+  scale_fill_distiller(palette = "Spectral") +
+  theme_classic(base_size = 18) +
+  labs(x = 'Index', y = '', title = i) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+)
+
+g <- grid.arrange(plist[[1]], plist[[2]], plist[[3]], 
+             plist[[4]], plist[[5]], plist[[6]],
+             plist[[7]], plist[[8]], plist[[9]],
+             plist[[10]], plist[[11]], nrow = 11, ncol = 1) # 11 x 1 or 3 x 4
+
+ggsave(file="SW11.tiff", g, dpi = 600)
+```
+
+
+
+
+
+
+
+
+
+
+### SW-4
+
+    python preprocessor.py -d ../unedited_data/Seawater_4cats.csv -p Seawater_4cats -c 0.3
+    python trainer.py -d 9 -m 3 -r 1 -p Seawater_4cats -e 1000
+
+
+```{r}
+# classes <- read_delim('../data/Seawater_4cats_labels.txt', delim=",", col_names = FALSE) %>% 
+#   str_replace("'", "") %>% 
+#   str_replace(" ", "") %>% 
+#   str_replace("'", "") %>% 
+#   stri_replace_all_fixed("[", "") %>% 
+#   stri_replace_all_fixed("]", "")
+```
+
+```{r, fig.height=10, fig.width=6}
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Seawater_4cats/'
+classes <- c('HM', 'HandP', 'Ind', 'SW')
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats_dataset <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '1.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats_cams <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats <- bind_cols(explosives_3cats_dataset, explosives_3cats_cams)
+
+explosives_3cats$file <- mapvalues(explosives_3cats$file, 
+                                   from = unique(explosives_3cats$file), 
+                                   to = classes
+)
+
+
+plist <- lapply(classes, function(i) 
+  explosives_3cats %>% 
+  select(file, X1, `11`, `0`) %>% 
+  rename(Data = `0`,
+         CAM = `11`) %>%
+  filter(file == i) %>% 
+  mutate(
+    CAM = (CAM-min(CAM))/(max(CAM)-min(CAM))
+  ) %>% 
+  ggplot() +
+  geom_bar(aes(x=X1, y=-35, fill=CAM), stat="identity", width=1.5) +
+  geom_bar(aes(x=X1, y=15, fill=CAM), stat="identity", width=1.5) +
+  geom_line(aes(X1, Data), size = 1.2) + 
+  scale_fill_distiller(palette = "Spectral") +
+  theme_classic(base_size = 18) +
+  labs(x = 'Index', y = '', title = i) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+)
+
+g <- grid.arrange(plist[[1]], plist[[2]], plist[[3]], 
+             plist[[4]], nrow = 4, ncol = 1)
+
+ggsave(file="SW4.tiff", g, dpi = 600)
+```
+
+
+
+
+
+### EXP-11
+
+    python preprocessor.py -d ../unedited_data/Explosives.csv -p Explosives -c 0.5
+    python trainer.py -d 10 -m 2 -r 1 -p Explosives -e 1000
+    
+```{r}
+# classes <- read_delim('../data/Explosives_labels.txt', delim="' ,", col_names = FALSE) %>% 
+#   str_replace("'", "") %>% 
+#   str_replace(" ", "") %>% 
+#   str_replace("'", "") %>% 
+#   stri_replace_all_fixed("[", "") %>% 
+#   stri_replace_all_fixed("]", "")
+# 
+# classes
+# 
+# remove <- c(",", "")
+# 
+# classes <- classes[!classes %in% remove]
+# 
+# classes
+
+```
+
+```{r, fig.width=6, fig.height=27.5}
+read_report <- function(filepath){
+  report_out <- read_csv(filepath)
+  return(report_out)
+}
+
+base_path <- 'cams/'
+dataset <- 'Explosives/'
+classes <- c("2,6 DNT", "1,3 DNB", "RDX", "1,3,5 TNB", "Tetryl", "TNT",
+             "2am 4,6 DNT", "4am 2,6 DNT", "3NT", "2,4 DNT", "buffer")
+
+all_reports <- lapply(list.files(paste(base_path, dataset, sep = ''), full.names = TRUE), 
+                      read_report)
+
+names(all_reports) <- gsub(".txt",
+                           "",
+                           list.files(paste(base_path, dataset, sep = '')),
+                           fixed = TRUE)
+
+explosives_3cats_dataset <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '1.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats_cams <- bind_rows(all_reports, .id = 'file') %>% 
+    filter(str_detect(file, '2.csv'))  ###### 1.csv or 2.csv
+
+explosives_3cats <- bind_cols(explosives_3cats_dataset, explosives_3cats_cams)
+
+explosives_3cats$file <- mapvalues(explosives_3cats$file,
+                                   from = unique(explosives_3cats$file),
+                                   to = classes
+)
+
+plist <- lapply(classes, function(i) 
+  explosives_3cats %>% 
+  select(file, X1, `11`, `0`) %>% 
+  rename(Data = `0`,
+         CAM = `11`) %>%
+  filter(file == i) %>% 
+  mutate(
+    CAM = (CAM-min(CAM))/(max(CAM)-min(CAM))
+  ) %>% 
+  ggplot() +
+  geom_bar(aes(x=X1, y=-65, fill=CAM), stat="identity", width=1.5) +
+  geom_bar(aes(x=X1, y=60, fill=CAM), stat="identity", width=1.5) +
+  geom_line(aes(X1, Data), size = 1.2) + 
+  scale_fill_distiller(palette = "Spectral") +
+  theme_classic(base_size = 18) +
+  labs(x = 'Index', y = '', title = i) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=16, color = "black", family="Arial"),
+        strip.background = element_blank())
+)
+
+g <- grid.arrange(plist[[1]], plist[[2]], plist[[3]], 
+             plist[[4]], plist[[5]], plist[[6]],
+             plist[[7]], plist[[8]], plist[[9]],
+             plist[[10]], plist[[11]], nrow = 11, ncol = 1)
+
+ggsave(file="EXP11.tiff", g, dpi = 600)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Notes 
+
+Can't use FCN until the generation of CAM for that model is fixed... so 1 --> 3
+
+Remove previous cam files from directory before running
+
+

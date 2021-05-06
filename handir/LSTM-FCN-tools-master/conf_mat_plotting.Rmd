@@ -1,0 +1,38 @@
+---
+title: "confusion matrix plotting"
+author: "snd"
+date: "12/2/2018"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+
+
+```{r, fig.width=6.5, fig.height=5}
+read_csv('weights/ArrowHead_3_conf_mat.csv') %>% 
+  gather(k, v, -True) %>% 
+  ggplot() +
+  geom_tile(aes(rev(True), k, fill=v)) +
+  geom_text(aes(rev(True), k, label = round(v, 2))) +
+  theme_classic(base_size = 16) +
+  scale_fill_distiller(palette = "Blues", direction = 1) + 
+  coord_flip() +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(size=16, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial", hjust = 0.5, face = 'plain')) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(y = 'Predicted ID', x = 'True ID', fill = 'Probability') 
+```
+
+
+
+
+

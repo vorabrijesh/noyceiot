@@ -1,0 +1,6 @@
+
+          The dataset index 1 is for the dataset ArrowHead. 
+          Model number: 2. Where LSTM = 0, FCN = 1, LSTM-FCN = 2, ALSTM-FCN = 3.
+          The model was run for 10 epochs with a batch size of 4.
+          Run at 2020-07-14 04:59:58.
+            

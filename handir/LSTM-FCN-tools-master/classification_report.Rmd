@@ -1,0 +1,122 @@
+---
+title: "Classification report"
+author: "snd"
+date: "11/26/2018"
+output: html_document
+---
+
+```{r, include=FALSE}
+library("devtools")
+# install_github("sndean/packageSets")
+library(packageSets)
+packageSet(all)
+```
+
+# Classification report
+
+Using the classification_report function from sklearn (https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html)
+
+Found in `/home/snd2/results/including_reports_120818`.
+
+*Constants and lists*
+epochs=1000 # 50
+seconds=180 # 30
+prefix=("Seawater_4cats") # "Explosives" "Explosives_3cats" "Seawater" "Seawater_4cats"
+dataset_index=(9) # 10 11 8 9 
+split=(0.3) # 0.5 0.3 0.3 0.3
+
+
+*Constants and lists for the 4-model loop specifically*
+lcn=(128 0 32 32)
+bats=(128 4 4 4)
+
+
+```{r, message=FALSE, warning=FALSE}
+# X3 = for all but Explosives, which is X1
+read_report <- function(filepath){
+  report_out <- read_table(filepath) %>% 
+  filter(grepl('total', X1)) %>%  ######### X1 or X3
+  rename(f1_score = `f1-score`)
+  return(report_out)
+}
+
+# 1 exp... 2 exp3... 3 sw... 4 sw4...
+ds = 1
+
+if(ds == 1){
+  base_path <- '~/results/including_reports_121118/'   # for Explosives
+  dataset <- 'Explosives'
+  } else if (ds == 2){
+    base_path <- '~/results/including_reports_120818/'   # for Explosives_3cats
+    dataset <- 'Explosives_3cats'
+    } else if (ds == 3){
+      base_path <- '~/results/' # for Seawater (Seawater_all)
+      dataset <- 'Seawater_all'
+      } else {  # ds == 4
+        base_path <- '~/results/' # for Seawater_4cats (Seawater_all4cats)
+        dataset <- 'Seawater_all4cats'
+        }
+
+all_reports <- lapply(list.files(paste(base_path, dataset, '/report/', sep = ''), full.names = TRUE), read_report)
+
+names(all_reports) <- gsub(".txt", "", list.files(paste(base_path, dataset, '/report/', sep = '')), fixed = TRUE)
+
+# explosives, explosives_3cats, seawater_all, seawater_all4cats
+explosives <- bind_rows(all_reports, .id = 'file') %>% 
+  mutate(
+    file = str_replace_all(file, "1knn_dtw", "1KNN-DTW"),
+    file = str_replace_all(file, "Seawater_all4cats", "SeawaterAll4cats"),
+    file = str_replace_all(file, "Explosives_3cats", "Explosives3cats"),
+    file = str_replace_all(file, "Seawater_all", "SeawaterAll")
+  )
+```
+
+```{r}
+bind_rows(seawater_all, seawater_all4cats, explosives, explosives_3cats, .id = 'dataset') %>% 
+  separate(file, into = c('dataset', 'model', 'report', 'rep'), sep = '_') %>% 
+  select(-report) %>% 
+  group_by(model, rep, dataset) %>% 
+  summarise(
+    m = mean(f1_score)
+  ) %>% 
+  group_by(model, dataset) %>% 
+  summarise(
+    m1 = median(m),
+    iqr = IQR(m)
+  ) %>% 
+  select(-iqr) %>% # m1 iqr ## to remove the column
+  spread(dataset, m1) %>% 
+  write_csv('m1_after_cv.csv') # m1_after_cv iqr_after_cv
+```
+
+```{r}
+read_csv('m1_after_cv.csv')
+```
+
+```{r}
+read_csv('iqr_after_cv.csv')
+```
+
+### Stats
+
+```{r}
+bind_rows(seawater_all, seawater_all4cats, explosives, explosives_3cats, .id = 'dataset') %>% 
+  separate(file, into = c('dataset', 'model', 'report', 'rep'), sep = '_') %>% 
+  select(-report) %>% 
+  group_by(model, rep, dataset)
+
+stat1 <- bind_rows(seawater_all, seawater_all4cats, explosives, explosives_3cats, .id = 'dataset') %>% 
+  separate(file, into = c('dataset', 'model', 'report', 'rep'), sep = '_') %>% 
+  select(-report) %>% 
+  group_by(model, rep, dataset) %>% 
+  filter(dataset == 'SeawaterAll4cats')
+
+pairwise.wilcox.test(stat1$f1_score, stat1$model, paired = FALSE, p.adjust.method = 'holm')
+```
+
+
+
+
+
+
+

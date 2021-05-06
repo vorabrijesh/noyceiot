@@ -1,0 +1,284 @@
+---
+title: "Batch size optimization plotting"
+author: "snd"
+date: "12/11/2018"
+output: html_document
+---
+
+
+# Batch size optimization plotting
+
+```{r, include=FALSE}
+library("devtools")
+# install_github("sndean/packageSets")
+library(packageSets)
+packageSet(all)
+```
+
+```{r}
+read_rocauc <- function(base_path, dataset_name){
+  rocauc_out <- read_csv(paste(base_path, dataset_name, '/ROCAUC/ROCAUCs_1.csv', sep = ''), col_names = FALSE) %>% 
+    bind_rows(., read_csv(paste(base_path, dataset_name, '/ROCAUC/ROCAUCs_2.csv', sep = ''), col_names = FALSE)) %>%
+    bind_rows(., read_csv(paste(base_path, dataset_name, '/ROCAUC/ROCAUCs_3.csv', sep = ''), col_names = FALSE)) %>% 
+    na.omit() %>% 
+    rename('dataset' = X1,
+           'model' = X2,
+           'micro' = X3,
+           'macro' = X4)
+  return(rocauc_out)
+}
+```
+
+
+
+
+
+
+
+## Optimizing batch size for LSTM
+
+LSTM_batchsize_optimization_121018
+
+Constants: 
+model = 0; 
+LCN = 128, 128, 128, 128
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 0
+p <- '~/Desktop/LSTM_batchsize_optimization_121018/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.height=9, fig.width=5}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(dataset_label~k, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=12, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'LSTM, 500 epochs, batch size optimization')
+```
+
+
+
+
+
+
+
+## Optimizing batch size for FCN
+
+FCN_batchsize_optimization_121018
+
+Constants: 
+model = 1; 
+LCN = 0, 0, 0, 0
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 1
+p <- '~/Desktop/FCN_batchsize_optimization_121018/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.height=9, fig.width=5}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(dataset_label~k, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=12, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'FCN, 500 epochs, batch size optimization')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Optimizing batch size for LSTM-FCN
+
+LSTM_FCN_batchsize_optimization_121018
+
+Constants: 
+model = 2; 
+LCN = 128, 64, 4, 8
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 2
+p <- '~/Desktop/LSTM_FCN_batchsize_optimization_121018/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+
+
+```{r, fig.height=9, fig.width=5}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(dataset_label~k, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=12, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'LSTM-FCN, 500 epochs, batch size optimization')
+```
+
+
+
+
+
+
+
+
+
+
+## Optimizing batch size for ALSTM-FCN
+
+ALSTM_FCN_batchsize_optimization_121018
+
+Constants: 
+model = 3; 
+LCN = 128, 4, 4, 8
+
+Looped over 128 64 32 16 8 4 batch sizes
+
+
+```{r, warning=FALSE, message=FALSE}
+model_num <- 3
+p <- '~/Desktop/ALSTM_FCN_batchsize_optimization_121018/'
+nums <- c(128, 64, 32, 16, 8, 4)
+
+combined <- bind_rows(`Seawater (11 classes)` = read_rocauc(p, 'Seawater'), 
+                      `Seawater (4 classes)` = read_rocauc(p, 'Seawater_4cats'), 
+                      `Explosives (11 classes)` = read_rocauc(p, 'Explosives'), 
+                      `Explosives (3 classes)` = read_rocauc(p, 'Explosives_3cats'), 
+                      .id = 'dataset_label')
+
+combined$lcn <- rep(nums, 12)
+```
+
+```{r, fig.height=9, fig.width=5}
+combined %>% 
+  filter(model == model_num) %>% 
+  select(lcn, micro, macro, dataset_label) %>% 
+  gather(k, v, -lcn, -dataset_label) %>% 
+  mutate(
+    lcn = factor(lcn, levels = rev(nums)),
+    dataset_label = factor(dataset_label, levels = c('Seawater (4 classes)', 
+                                                     'Seawater (11 classes)',
+                                                     'Explosives (3 classes)',
+                                                     'Explosives (11 classes)')),
+    k = factor(k, levels = c('micro', 'macro'))
+  ) %>% 
+  ggplot() +
+  theme_bw(base_size = 18) +
+  geom_boxplot(aes(lcn, v, fill = dataset_label), color = 'black') +
+  facet_grid(dataset_label~k, scales = 'free') +
+  guides(fill=FALSE) +
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=12, color = "black", family="Arial")) +
+  theme(strip.text.y = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=12, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  labs(x = 'Batch size', y = 'average AUC', title = 'ALSTM-FCN, 500 epochs, batch size optimization')
+```
+
+

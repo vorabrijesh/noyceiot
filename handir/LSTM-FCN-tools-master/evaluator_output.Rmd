@@ -1,0 +1,623 @@
+---
+title: "evaluator output"
+author: "snd"
+date: "11/22/2018"
+output: html_document
+---
+
+```{r, include=FALSE}
+library("devtools")
+# install_github("sndean/packageSets")
+library(packageSets)
+packageSet(all)
+```
+
+
+
+# Explosives
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output1.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample1 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = '2,4 DNT',
+    Probability = as.double(Probability)
+  )
+sample1
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output2.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample2 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = '2,4 DNT',
+    Probability = as.double(Probability)
+  )
+sample2
+```
+
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output3.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample3 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = '2,4 DNT',
+    Probability = as.double(Probability)
+  )
+sample3
+```
+
+
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output4.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample4 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'TNT',
+    Probability = as.double(Probability)
+  )
+sample4
+```
+
+
+
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output5.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample5 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'TNT',
+    Probability = as.double(Probability)
+  )
+sample5
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output6.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample6 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'RDX',
+    Probability = as.double(Probability)
+  )
+sample6
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output7.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample7 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'RDX',
+    Probability = as.double(Probability)
+  )
+sample7
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/explosives/output8.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample8 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'RDX',
+    Probability = as.double(Probability)
+  )
+sample8
+```
+
+
+
+```{r, fig.height=8, fig.width=4.65}
+bind_rows('1' = sample1,
+          '2' = sample2,
+          '3' = sample3,
+          '1' = sample4,
+          '2' = sample5,
+          '1' = sample6,
+          '2' = sample7,
+          '3' = sample8,
+          .id = 'dataset_label') %>% 
+  mutate(
+    Label = str_replace_all(Label, "  ", ""),
+    Label = str_replace_all(Label, "T ", "T"),
+    Label = str_replace_all(Label, "r ", "r"),
+    Label = str_replace_all(Label, "l ", "l")
+  ) %>% 
+  ggplot() +
+  geom_col(aes(Label, Probability, fill = dataset_label), position = 'dodge', color = 'black', width=0.8) +
+  facet_grid(True~., scales = 'free') +
+  coord_flip() +
+  theme_bw(base_size = 18) +
+  # guides(fill=FALSE) +
+  scale_fill_brewer(palette = 'Set1') + 
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial", hjust = 0.5, face = 'plain')) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  # theme(legend.position="bottom") +
+  theme(axis.text.x = element_text(size = 14, angle = 90, hjust = 1)) +
+  labs(x = 'Predicted ID', y = 'Probability', title = 'True ID', fill = 'sample')
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+# Seawater
+
+After training on `Seawater_new.csv`
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output1.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample1 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'HMM',
+    Probability = as.double(Probability)
+  )
+sample1
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output2.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample2 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'HMM',
+    Probability = as.double(Probability)
+  )
+sample2
+```
+
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output3.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample3 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'HMM',
+    Probability = as.double(Probability)
+  )
+sample3
+```
+
+
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output4.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample4 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'MeP',
+    Probability = as.double(Probability)
+  )
+sample4
+```
+
+
+
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output5.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample5 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'MeP',
+    Probability = as.double(Probability)
+  )
+sample5
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output6.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample6 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'Cd',
+    Probability = as.double(Probability)
+  )
+sample6
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output7.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample7 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'Cd',
+    Probability = as.double(Probability)
+  )
+sample7
+```
+
+
+```{r}
+df <- read_delim('~/results/final evaluator_120818/seawater/output8.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample8 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'Cd',
+    Probability = as.double(Probability)
+  )
+sample8
+```
+
+
+
+```{r, fig.height=8, fig.width=4.25}
+bind_rows('1' = sample1,
+          '2' = sample2,
+          '3' = sample3,
+          '1' = sample4,
+          '2' = sample5,
+          '1' = sample6,
+          '2' = sample7,
+          '3' = sample8,
+          .id = 'dataset_label') %>% 
+  mutate(
+    Label = str_replace_all(Label, "  ", ""),
+    Label = str_replace_all(Label, "T ", "T"),
+    Label = str_replace_all(Label, "r ", "r"),
+    Label = str_replace_all(Label, "l ", "l"),
+    Label = str_replace_all(Label, "P ", "P"),
+    Label = str_replace_all(Label, "M ", "M"),
+    Label = str_replace_all(Label, "A ", "A")
+  ) %>% 
+  ggplot() +
+  geom_col(aes(Label, Probability, fill = dataset_label), position = 'dodge', color = 'black', width=0.8) +
+  facet_grid(True~., scales = 'free') +
+  # scale_y_continuous(limits = c(0, 0.98)) +
+  coord_flip() +
+  theme_bw(base_size = 18) +
+  # guides(fill=FALSE) +
+  scale_fill_brewer(palette = 'Set1') + 
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(size=16, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial", hjust = 0.5, face = 'plain')) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  # theme(legend.position="bottom") +
+  theme(axis.text.x = element_text(size = 14, angle = 90, hjust = 1)) +
+  labs(x = 'Predicted ID', y = 'Probability', title = 'True ID', fill = 'Test sample') +
+  scale_y_continuous(breaks=seq(0.00, 0.98, 0.25))
+
+```
+
+
+
+
+
+
+
+# With files on MacOS (snd)
+
+/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives
+/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater
+
+
+# Explosives
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output1.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample1 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = '2,4 DNT',
+    Probability = as.double(Probability)
+  )
+sample1
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output2.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample2 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = '2,4 DNT',
+    Probability = as.double(Probability)
+  )
+sample2
+```
+
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output3.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample3 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = '2,4 DNT',
+    Probability = as.double(Probability)
+  )
+sample3
+```
+
+
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output4.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample4 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'TNT',
+    Probability = as.double(Probability)
+  )
+sample4
+```
+
+
+
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output5.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample5 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'TNT',
+    Probability = as.double(Probability)
+  )
+sample5
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output6.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample6 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'RDX',
+    Probability = as.double(Probability)
+  )
+sample6
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output7.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample7 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'RDX',
+    Probability = as.double(Probability)
+  )
+sample7
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/explosives/output8.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample8 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'RDX',
+    Probability = as.double(Probability)
+  )
+sample8
+```
+
+
+
+```{r}
+
+# fig.height=8, fig.width=4.65}
+bind_rows('1' = sample1,
+          '2' = sample2,
+          '3' = sample3,
+          '1' = sample4,
+          '2' = sample5,
+          '1' = sample6,
+          '2' = sample7,
+          '3' = sample8,
+          .id = 'dataset_label') %>% 
+  mutate(
+    Label = str_replace_all(Label, "  ", ""),
+    Label = str_replace_all(Label, "T ", "T"),
+    Label = str_replace_all(Label, "r ", "r"),
+    Label = str_replace_all(Label, "l ", "l")
+  ) %>% 
+  ggplot() +
+  geom_col(aes(Label, Probability, fill = dataset_label), position = 'dodge', color = 'black', width=0.8) +
+  facet_grid(True~., scales = 'free') +
+  # coord_flip() +
+  theme_bw(base_size = 18) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = 'Set1') + 
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial", hjust = 0.5, face = 'plain')) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(legend.position="bottom") +
+  theme(axis.text.x = element_text(size = 14, angle = 45, hjust = 1)) +
+  labs(x = 'Predicted ID', y = 'Probability', fill = 'sample')
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+# Seawater
+
+After training on `Seawater_new.csv`
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output1.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample1 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'HMM',
+    Probability = as.double(Probability)
+  )
+sample1
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output2.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample2 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'HMM',
+    Probability = as.double(Probability)
+  )
+sample2
+```
+
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output3.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample3 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'HMM',
+    Probability = as.double(Probability)
+  )
+sample3
+```
+
+
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output4.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample4 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'MeP',
+    Probability = as.double(Probability)
+  )
+sample4
+```
+
+
+
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output5.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample5 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'MeP',
+    Probability = as.double(Probability)
+  )
+sample5
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output6.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample6 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'Cd',
+    Probability = as.double(Probability)
+  )
+sample6
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output7.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample7 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'Cd',
+    Probability = as.double(Probability)
+  )
+sample7
+```
+
+
+```{r}
+df <- read_delim('/Users/snd/org/GitHub/LSTM-FCN-trainer/final_eval_figure/seawater/output8.txt', delim = '\t', col_names = FALSE, skip = 2)
+sample8 <- extract(df, X1, into = c('Label', 'Probability'), '(.*)\\s+([^ ]+)$') %>% 
+  mutate(
+    True = 'Cd',
+    Probability = as.double(Probability)
+  )
+sample8
+```
+
+
+
+```{r}
+
+# , fig.height=8, fig.width=4.25}
+bind_rows('1' = sample1,
+          '2' = sample2,
+          '3' = sample3,
+          '1' = sample4,
+          '2' = sample5,
+          '1' = sample6,
+          '2' = sample7,
+          '3' = sample8,
+          .id = 'dataset_label') %>% 
+  mutate(
+    Label = str_replace_all(Label, "  ", ""),
+    Label = str_replace_all(Label, "T ", "T"),
+    Label = str_replace_all(Label, "r ", "r"),
+    Label = str_replace_all(Label, "l ", "l"),
+    Label = str_replace_all(Label, "P ", "P"),
+    Label = str_replace_all(Label, "M ", "M"),
+    Label = str_replace_all(Label, "A ", "A")
+  ) %>% 
+  ggplot() +
+  geom_col(aes(Label, Probability, fill = dataset_label), position = 'dodge', color = 'black', width=0.8) +
+  facet_grid(True~., scales = 'free') +
+  # scale_y_continuous(limits = c(0, 0.98)) +
+  # coord_flip() +
+  theme_bw(base_size = 18) +
+  # guides(fill=FALSE) +
+  scale_fill_brewer(palette = 'Set1') + 
+  theme(axis.text = element_text(color = "black", family="Arial")) +
+  theme(axis.text.x = element_text(size=16, color = "black", family="Arial")) +
+  theme(axis.title = element_text(color = "black", family="Arial")) +
+  theme(plot.title = element_text(size=16, color = "black", family="Arial", hjust = 0.5, face = 'plain')) +
+  theme(strip.text.y = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=14, color = "black", family="Arial"), 
+        strip.background = element_blank()) +
+  theme(legend.position="bottom") +
+  theme(axis.text.x = element_text(size = 14, angle = 45, hjust = 1)) +
+  labs(x = 'Predicted ID', y = 'Probability', fill = 'Test sample') +
+  scale_y_continuous(breaks=seq(0.00, 0.98, 0.25))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
