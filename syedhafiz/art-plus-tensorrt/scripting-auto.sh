@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #update the path to your art library
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/shafiz/ART/adversarial-robustness-toolbox/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/tsgujar/adversarial-robustness-toolbox/
 
 N_PER_CLASS_TRAINING_SAMPLES=10
-N_PER_CLASS_TESTING_SAMPLES=2
+N_PER_CLASS_TESTING_SAMPLES=1
 N_PER_CLASS_ADV_SAMPLES=$N_PER_CLASS_TESTING_SAMPLES
 N_CLASSES=10
 N_TRAINING_SAMPLES=$(($N_PER_CLASS_TRAINING_SAMPLES*$N_CLASSES))
@@ -14,7 +14,7 @@ TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
 MODEL_NAME=(VGG19 ResNet50)
-ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod)
+ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod AutoProjectedGradientDescent ShadowAttack ElasticNet Wasserstein AdversarialPatch)
 
 
 DATASET_INDEX=0
@@ -23,7 +23,7 @@ N_EPOCHS=2
 
 for (( MODEL_INDEX=0; MODEL_INDEX<2; MODEL_INDEX++ ))
 do
-    for (( ATTACK_INDEX=1; ATTACK_INDEX<3; ATTACK_INDEX++ ))
+    for (( ATTACK_INDEX=6; ATTACK_INDEX<7; ATTACK_INDEX++ ))
     do
         PRINT_OUTPUT_FILE="output-${DATASET[$DATASET_INDEX]}-${MODEL_NAME[$MODEL_INDEX]}-${ATTACK_NAME[$ATTACK_INDEX]}.txt"
         echo $PRINT_OUTPUT_FILE
@@ -31,15 +31,15 @@ do
         CLASSIFIER_FILE_PREFIX="classifier-${MODEL_NAME[$MODEL_INDEX]}-${DATASET[$DATASET_INDEX]}-on-${N_TRAINING_SAMPLES}"
         
         #update the path to your python-3-created virtual environment
-        source /home/shafiz/ART/ART-venv-default/bin/activate
-        python3 smh-train-classifier.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
+        source /home/tsgujar/ArtVnv2/bin/activate
+        #python3 smh-train-classifier.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
         python3 smh-subset-of-test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
         python3 smh-attack-and-adv-examples.py $CLASSIFIER_FILE_PREFIX ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_TESTING_SAMPLES >> $PRINT_OUTPUT_FILE
         deactivate
 
-        python3 smh-subset-of-test-adv.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
-        python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
-        python3 smh-tensorrt-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
+        #python3 smh-subset-of-test-adv.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
+        #python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
+        #python3 smh-tensorrt-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
 
     done
 
