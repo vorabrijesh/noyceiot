@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #update the path to your art library
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/shafiz/ART/adversarial-robustness-toolbox/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/tsgujar/adversarial-robustness-toolbox/
 
 N_PER_CLASS_TRAINING_SAMPLES=50
 N_PER_CLASS_TESTING_SAMPLES=8
@@ -14,7 +14,7 @@ TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
 MODEL_NAME=(VGG19 ResNet50)
-ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod)
+ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod AutoProjectedGradientDescent ShadowAttack ElasticNet Wasserstein AdversarialPatch)
 
 
 DATASET_INDEX=0
