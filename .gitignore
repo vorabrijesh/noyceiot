@@ -2,3 +2,5 @@
 **/*.npy
 **/*.txt
 **/*.h5
+**/cifar10*
+**/__pycache__
