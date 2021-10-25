@@ -1,13 +1,19 @@
 #!/bin/bash
 
-#update the path to your art library
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/shafiz/ART/adversarial-robustness-toolbox/
+# usage: ./scripting-auto.sh <abs_path_to_art_lib> <abs_path_to_venv> <train - 0/1>
 
-N_PER_CLASS_TRAINING_SAMPLES=5000
+art_path=$1
+venv_path=$2
+train_flag=$3
+
+#update the path to your art library
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$art_path #$LD_LIBRARY_PATH:/home/shafiz/ART/adversarial-robustness-toolbox/
+
+N_PER_CLASS_TRAINING_SAMPLES=5
 N_BATCH_SIZE=128
 N_EPOCHS=2
 
-N_PER_CLASS_TESTING_SAMPLES=200
+N_PER_CLASS_TESTING_SAMPLES=2
 
 N_PER_CLASS_ADV_SAMPLES=$N_PER_CLASS_TESTING_SAMPLES
 
@@ -18,15 +24,15 @@ N_ADV_SAMPLES=$(($N_PER_CLASS_ADV_SAMPLES*$N_CLASSES))
 TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
-MODEL_NAME=(VGG19 ResNet50)
+MODEL_NAME=(VGG19 ResNet50 MobileNet)
 ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack)
 
 
 DATASET_INDEX=0
-MODEL_INDEX_START=1
-MODEL_INDEX_END=1
-ATTACK_INDEX_START=0
-ATTACK_INDEX_END=0
+MODEL_INDEX_START=2
+MODEL_INDEX_END=2
+ATTACK_INDEX_START=2
+ATTACK_INDEX_END=2
 
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 
@@ -40,14 +46,18 @@ do
     CLASSIFIER_FILE_PREFIX="classifier-${MODEL_NAME[$MODEL_INDEX]}-${DATASET[$DATASET_INDEX]}-on-${N_TRAINING_SAMPLES}"
      
     #update the path to your python-3-created virtual environment
-    # source /home/shafiz/ART/ART-venv-default/bin/activate
-    # python3 smh-train-classifier.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
-    # deactivate
+    if [ $train_flag -eq 1 ]; then
+        source "${venv_path}bin/activate" #/home/shafiz/ART/ART-venv-default/bin/activate
+        python3 smh-train-classifier.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
+        deactivate
+    fi 
+
     for (( ATTACK_INDEX=${ATTACK_INDEX_START}; ATTACK_INDEX<${ATTACK_INDEX_END}+1; ATTACK_INDEX++ ))
     do
         echo "Fed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
         #update the path to your python-3-created virtual environment
-        source /home/shafiz/ART/ART-venv-default/bin/activate
+        #source /home/shafiz/ART/ART-venv-default/bin/activate
+        source "${venv_path}bin/activate"
         python3 smh-subset-of-test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
         python3 smh-attack-and-adv-examples.py $CLASSIFIER_FILE_PREFIX ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_TESTING_SAMPLES >> $PRINT_OUTPUT_FILE
         deactivate
