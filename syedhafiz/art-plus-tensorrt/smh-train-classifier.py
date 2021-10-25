@@ -1,13 +1,14 @@
 from art.attacks.evasion.carlini import CarliniL0Method, CarliniLInfMethod
 import tensorflow as tf
 from tensorflow.python.keras.activations import get
+from tensorflow.python.keras.applications.mobilenet import MobileNet
 
 tf.compat.v1.disable_eager_execution()
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten,BatchNormalization,Activation,Dropout, Conv2D, MaxPooling2D
 from tensorflow.keras.losses import categorical_crossentropy
 from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.applications import ResNet50, VGG19
+from tensorflow.keras.applications import ResNet50, VGG19, MobileNet
 import numpy as np
 
 from art.estimators.classification import KerasClassifier
@@ -35,7 +36,7 @@ import argparse
 print('# '*50+str(time.ctime()))
 tmpdir = os.getcwd()
 time_weight=1000
-MODEL_NAME={"VGG":"VGG19", "RESNET":"ResNet50"}
+MODEL_NAME={"VGG":"VGG19", "RESNET":"ResNet50", "MOBILENET": "MobileNet"}
 # Step 1: Load the dataset
 (x_train, y_train), _, min_pixel_value, max_pixel_value = load_cifar10()
 
@@ -79,6 +80,19 @@ elif model_name==MODEL_NAME.get("RESNET"):
     # print(model.summary())
     adam=Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
     model.compile(optimizer=adam,loss=categorical_crossentropy,metrics=["accuracy"])
+elif model_name == MODEL_NAME.get("MOBILENET"):
+    base_model = MobileNet(include_top=False, weights='imagenet', input_shape=(32,32,3), classes=y_train.shape[1])
+    model.add(base_model)
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512,activation=('relu')))
+    model.add(Dense(256,activation=('relu')))
+    model.add(Dropout(.3))
+    model.add(Dense(128,activation=('relu')))
+    model.add(Dropout(.2))
+    model.add(Dense(10,activation=('softmax')))
+    # print(model.summary())
+    model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
 # Step 3: Create the ART classifier
 classifier = KerasClassifier(model=model, clip_values=(min_pixel_value, max_pixel_value), use_logits=False)
