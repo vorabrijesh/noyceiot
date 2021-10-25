@@ -19,6 +19,10 @@ from art.utils import load_cifar10
 
 import time
 
+import warnings
+#suppress warnings
+warnings.filterwarnings('ignore')
+
 ###############
 import matplotlib as mpl
 import os
@@ -71,11 +75,12 @@ elif attack_name==ATTACK_NAME.get("FGSM"):
 # elif attack_name==ATTACK_NAME.get("SA"):
 #     attack = ShadowAttack(estimator=classifier,sigma=0.5,nb_steps=3,learning_rate=0.1,lambda_tv=0.3,lambda_c=1.0,lambda_s=0.5,batch_size=32,targeted=False,verbose=False)
 elif attack_name==ATTACK_NAME.get("EN"):
-    attack = ElasticNet(classifier=classifier,max_iter=0,binary_search_steps=0,learning_rate=0,initial_const=1,verbose=False)
+    attack = ElasticNet(classifier=classifier,targeted=False, max_iter=2, verbose=True)
 elif attack_name==ATTACK_NAME.get("ADP"):
-    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5,scale_min=0.4,scale_max=0.41,learning_rate=5.0,batch_size=10,max_iter=5,verbose=False)
+    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5,scale_min=0.4,scale_max=0.41,learning_rate=5.0,batch_size=10,max_iter=5,verbose=True)
 elif attack_name==ATTACK_NAME.get("WS"):
-    attack = Wasserstein(classifier,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=32,verbose=False)
+    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5,
+            projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
 
 start_time=time.time()
 x_test_adv = attack.generate(x_test)
