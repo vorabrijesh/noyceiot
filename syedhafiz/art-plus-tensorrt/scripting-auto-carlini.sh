@@ -7,7 +7,7 @@ N_PER_CLASS_TRAINING_SAMPLES=5000
 N_BATCH_SIZE=128
 N_EPOCHS=2
 
-N_PER_CLASS_TESTING_SAMPLES=200
+N_PER_CLASS_TESTING_SAMPLES=800
 
 N_PER_CLASS_ADV_SAMPLES=$N_PER_CLASS_TESTING_SAMPLES
 
@@ -19,12 +19,12 @@ TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
 MODEL_NAME=(VGG19 ResNet50)
-ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack)
+ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod AutoProjectedGradientDescent ShadowAttack ElasticNet Wasserstein AdversarialPatch)
 
 
 DATASET_INDEX=0
-MODEL_INDEX_START=1
-MODEL_INDEX_END=1
+MODEL_INDEX_START=0
+MODEL_INDEX_END=0
 ATTACK_INDEX_START=0
 ATTACK_INDEX_END=0
 
