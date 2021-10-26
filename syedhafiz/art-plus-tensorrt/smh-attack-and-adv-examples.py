@@ -1,7 +1,8 @@
 from art.attacks.attack import Attack
 from art.attacks.evasion.auto_attack import AutoAttack
 from art.attacks.evasion.carlini import CarliniL0Method, CarliniLInfMethod, CarliniL2Method
-from art.attacks.evasion import DeepFool, FastGradientMethod, AutoProjectedGradientDescent, ShadowAttack, Wasserstein, BrendelBethgeAttack, ShapeShifter
+from art.attacks.evasion import DeepFool, FastGradientMethod, AutoProjectedGradientDescent, ShadowAttack, Wasserstein, BrendelBethgeAttack, ShapeShifter, UniversalPerturbation
+from art.attacks.evasion.iterative_method import BasicIterativeMethod
 from art.attacks.evasion.elastic_net import ElasticNet
 from art.attacks.evasion.adversarial_patch.adversarial_patch import AdversarialPatch
 import tensorflow as tf
@@ -16,6 +17,7 @@ import numpy as np
 from art.estimators.classification import KerasClassifier
 from art.utils import load_mnist, to_categorical
 from art.utils import load_cifar10
+from tests.utils import get_image_classifier_tf, get_image_classifier_kr
 
 import time
 
@@ -41,7 +43,7 @@ import sys
 print('# '*50+str(time.ctime())+' :: smh-attack-and-adv-examples')
 
 ATTACK_NAME={"CW":"CarliniWagner", "DF":"Deepfool", "FGSM":"FastGradientMethod", "APGD":"AutoProjectedGradientDescent", "SA":"ShadowAttack", "WS":"Wasserstein",
-            "EN":"ElasticNet","ADP":"AdversarialPatch"}
+            "EN":"ElasticNet","ADP":"AdversarialPatch", "BIM":"BasicIterativeMethod", "UP":"UniversalPerturbation"}
 tmpdir = os.getcwd()
 
 # # Step 2: Load Model
@@ -56,7 +58,7 @@ x_test = np.load(dataset_name+'-x-test-'+str(n_test_samples)+'.npy')
 y_test = np.load(dataset_name+'-y-test-'+str(n_test_samples)+'.npy')
 
 
-classifier = KerasClassifier(model=model)#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
+classifier = KerasClassifier(model=model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
 predictions = classifier.predict(x_test)
 accuracy = np.sum(np.argmax(predictions, axis=1) == np.argmax(y_test, axis=1)) / len(y_test)
 print("Accuracy on benign test examples: {:.2f}%".format(accuracy * 100))
@@ -77,7 +79,23 @@ elif attack_name==ATTACK_NAME.get("FGSM"):
 elif attack_name==ATTACK_NAME.get("EN"):
     attack = ElasticNet(classifier=classifier,targeted=False, max_iter=2, verbose=True)
 elif attack_name==ATTACK_NAME.get("ADP"):
-    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5,scale_min=0.4,scale_max=0.41,learning_rate=5.0,batch_size=10,max_iter=5,verbose=True)
+    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5,
+            scale_min=0.4,
+            scale_max=0.41,
+            learning_rate=5.0,
+            batch_size=10,
+            max_iter=5,
+            verbose=True)
+    # target_ap = np.zeros(x_test.shape[0])
+    # start_time=time.time()
+    # x_test_adv,_ = attack.generate(x_test,target_ap)
+    # end_time = time.time()
+    # elapsed_time = end_time - start_time
+    #x_test_adv, _ = attack.generate(x_test,target_ap)
+elif attack_name==ATTACK_NAME.get("BIM"):
+    attack = BasicIterativeMethod(classifier,eps=1.0, eps_step=0.1, batch_size=128, verbose=True)
+elif attack_name==ATTACK_NAME.get("UP"):
+    attack = UniversalPerturbation(classifier,max_iter=1,attacker="ead",attacker_params={"max_iter": 2, "targeted": False, "verbose": False},verbose=True)
 elif attack_name==ATTACK_NAME.get("WS"):
     attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5,
             projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
