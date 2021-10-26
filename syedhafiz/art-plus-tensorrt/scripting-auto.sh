@@ -13,7 +13,7 @@ N_ADV_SAMPLES=$(($N_PER_CLASS_ADV_SAMPLES*$N_CLASSES))
 TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
-MODEL_NAME=(VGG19 ResNet50)
+MODEL_NAME=(VGG19 ResNet50 MobileNet DenseNet121)
 ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod)
 
 
