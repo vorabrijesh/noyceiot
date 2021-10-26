@@ -14,7 +14,7 @@ TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
 MODEL_NAME=(VGG19 ResNet50)
-ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein UniversalPerturbation BasicIterativeMethod AdversarialPatch AutoProjectedGradientDescent ShadowAttack)
+ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod)
 
 
 DATASET_INDEX=0
