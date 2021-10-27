@@ -108,7 +108,6 @@ elapsed_time = end_time - start_time
 # Step 7: Evaluate the ART classifier on adversarial test examples
 
 np.save(dataset_name+'-'+model_name+'-'+attack_name+'-x-test-adv-'+str(n_test_samples),x_test_adv)
-# np.save('cifar10'+'-Deepfool-'+'x-test-adv',x_test_adv)
 predictions = classifier.predict(x_test_adv)
 accuracy = np.sum(np.argmax(predictions, axis=1) == np.argmax(y_test, axis=1)) / len(y_test)
 print("Accuracy on adversarial test examples: {:.2f}% - in {:.2f} ms.".format(accuracy * 100,elapsed_time*1000))
