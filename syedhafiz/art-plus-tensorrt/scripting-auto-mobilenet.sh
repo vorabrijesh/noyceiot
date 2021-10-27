@@ -26,15 +26,15 @@ N_ADV_SAMPLES=$(($N_PER_CLASS_ADV_SAMPLES*$N_CLASSES))
 TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
-MODEL_NAME=(VGG19 ResNet50 MobileNet)
+MODEL_NAME=(VGG19 ResNet50 MobileNet DenseNet121)
 ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack)
 
 
 DATASET_INDEX=0
-MODEL_INDEX_START=0
-MODEL_INDEX_END=1
-ATTACK_INDEX_START=3
-ATTACK_INDEX_END=3
+MODEL_INDEX_START=3
+MODEL_INDEX_END=3
+ATTACK_INDEX_START=1
+ATTACK_INDEX_END=2
 
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 
