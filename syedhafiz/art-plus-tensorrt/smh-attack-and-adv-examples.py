@@ -1,10 +1,12 @@
 from art.attacks.attack import Attack
 from art.attacks.evasion.auto_attack import AutoAttack
 from art.attacks.evasion.carlini import CarliniL0Method, CarliniLInfMethod, CarliniL2Method
-from art.attacks.evasion import DeepFool, FastGradientMethod, AutoProjectedGradientDescent, ShadowAttack, Wasserstein, BrendelBethgeAttack, ShapeShifter, UniversalPerturbation
+from art.attacks.evasion import DeepFool, FastGradientMethod, AutoProjectedGradientDescent, ShadowAttack, Wasserstein, BrendelBethgeAttack, ShapeShifter, UniversalPerturbation, NewtonFool
 from art.attacks.evasion.iterative_method import BasicIterativeMethod
 from art.attacks.evasion.elastic_net import ElasticNet
 from art.attacks.evasion.adversarial_patch.adversarial_patch import AdversarialPatch
+from art.attacks.evasion.targeted_universal_perturbation import TargetedUniversalPerturbation
+from smh_utility_process_results import process_results
 import tensorflow as tf
 
 tf.compat.v1.disable_eager_execution()
@@ -43,9 +45,9 @@ import sys
 print('# '*50+str(time.ctime())+' :: smh-attack-and-adv-examples')
 
 ATTACK_NAME={"CW":"CarliniWagner", "DF":"Deepfool", "FGSM":"FastGradientMethod", "APGD":"AutoProjectedGradientDescent", "SA":"ShadowAttack", "WS":"Wasserstein",
-            "EN":"ElasticNet","ADP":"AdversarialPatch", "BIM":"BasicIterativeMethod", "UP":"UniversalPerturbation"}
+            "EN":"ElasticNet","ADP":"AdversarialPatch", "BIM":"BasicIterativeMethod", "UP":"UniversalPerturbation","NF":"NewtonFool","TUP":"TargetedUniversalPerturbation"}
 tmpdir = os.getcwd()
-
+time_weight=1000
 # # Step 2: Load Model
 keras_file_name=str(sys.argv[1])
 dataset_name=str(sys.argv[2])
@@ -59,13 +61,16 @@ y_test = np.load(dataset_name+'-y-test-'+str(n_test_samples)+'.npy')
 
 
 classifier = KerasClassifier(model=model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
+start_time=time.time()
 predictions = classifier.predict(x_test)
-accuracy = np.sum(np.argmax(predictions, axis=1) == np.argmax(y_test, axis=1)) / len(y_test)
-print("Accuracy on benign test examples: {:.2f}%".format(accuracy * 100))
+end_time = time.time()
+elapsed_time = end_time - start_time
+print("Full-bone stats on benign test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
+process_results(predictions, y_test)
 
 
 # Step 6: Generate adversarial test examples
-
+flag_TUP_Attack=False
 if attack_name==ATTACK_NAME.get("CW"):
     attack = CarliniL2Method(classifier=classifier)
 elif attack_name==ATTACK_NAME.get("DF"):
@@ -79,38 +84,47 @@ elif attack_name==ATTACK_NAME.get("FGSM"):
 elif attack_name==ATTACK_NAME.get("EN"):
     attack = ElasticNet(classifier=classifier,targeted=False, max_iter=2, verbose=True)
 elif attack_name==ATTACK_NAME.get("ADP"):
-    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5,
-            scale_min=0.4,
-            scale_max=0.41,
-            learning_rate=5.0,
-            batch_size=10,
-            max_iter=5,
-            verbose=True)
+    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5, scale_min=0.4, scale_max=0.41, learning_rate=5.0, batch_size=10, max_iter=5, verbose=True)
     # target_ap = np.zeros(x_test.shape[0])
     # start_time=time.time()
     # x_test_adv,_ = attack.generate(x_test,target_ap)
     # end_time = time.time()
     # elapsed_time = end_time - start_time
     #x_test_adv, _ = attack.generate(x_test,target_ap)
+elif attack_name==ATTACK_NAME.get("NF"):
+    attack = NewtonFool(classifier,max_iter=5, batch_size=128, verbose=True)
 elif attack_name==ATTACK_NAME.get("BIM"):
     attack = BasicIterativeMethod(classifier,eps=1.0, eps_step=0.1, batch_size=128, verbose=True)
 elif attack_name==ATTACK_NAME.get("UP"):
-    attack = UniversalPerturbation(classifier,max_iter=1,attacker="ead",attacker_params={"max_iter": 2, "targeted": False, "verbose": False},verbose=True)
+    attack = UniversalPerturbation(classifier,max_iter=1,attacker="ead",attacker_params={"max_iter": 2, "targeted": False, "verbose": True},verbose=True)
+elif attack_name==ATTACK_NAME.get("TUP"):
+    attack = TargetedUniversalPerturbation(classifier,max_iter=1, attacker="fgsm", attacker_params={"eps": 0.3, "targeted": True, "verbose": True})
+    target = 0
+    y_target = np.zeros([len(x_test), 10])
+    for i in range(len(x_test)):
+        y_target[i, target] = 1.0
+    flag_TUP_Attack=True
 elif attack_name==ATTACK_NAME.get("WS"):
-    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5,
-            projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
+    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
 
 start_time=time.time()
-x_test_adv = attack.generate(x_test)
+if flag_TUP_Attack==True:
+    x_test_adv = attack.generate(x_test,y=y_target)
+else:
+    x_test_adv = attack.generate(x_test)
 end_time = time.time()
 elapsed_time = end_time - start_time
-
+print("Adversarial examples generation time: {:.2f} ms.".format(elapsed_time*time_weight))
 # Step 7: Evaluate the ART classifier on adversarial test examples
 
 np.save(dataset_name+'-'+model_name+'-'+attack_name+'-x-test-adv-'+str(n_test_samples),x_test_adv)
+start_time = time.time()
 predictions = classifier.predict(x_test_adv)
-accuracy = np.sum(np.argmax(predictions, axis=1) == np.argmax(y_test, axis=1)) / len(y_test)
-print("Accuracy on adversarial test examples: {:.2f}% - in {:.2f} ms.".format(accuracy * 100,elapsed_time*1000))
+end_time = time.time()
+elapsed_time = end_time - start_time
+print("Full-bone stats on adversarial test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
+process_results(predictions, y_test)
+
 
 # f.close()
 # sys.stdout = original_stdout

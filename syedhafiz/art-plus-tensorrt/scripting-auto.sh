@@ -15,7 +15,7 @@ N_PER_CLASS_TRAINING_SAMPLES=5000
 N_BATCH_SIZE=128
 N_EPOCHS=20
 
-N_PER_CLASS_TESTING_SAMPLES=800
+N_PER_CLASS_TESTING_SAMPLES=8
 
 N_PER_CLASS_ADV_SAMPLES=$N_PER_CLASS_TESTING_SAMPLES
 
@@ -26,15 +26,15 @@ N_ADV_SAMPLES=$(($N_PER_CLASS_ADV_SAMPLES*$N_CLASSES))
 TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
-MODEL_NAME=(VGG19 ResNet50 MobileNet DenseNet121)
+MODEL_NAME=(MobileNet DenseNet121 VGG19 ResNet50)
 
-ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod)
+ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod NewtonFool TargetedUniversalPerturbation)
 
 DATASET_INDEX=0
 MODEL_INDEX_START=0
-MODEL_INDEX_END=3
-ATTACK_INDEX_START=8
-ATTACK_INDEX_END=9
+MODEL_INDEX_END=0
+ATTACK_INDEX_START=10
+ATTACK_INDEX_END=10
 
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 

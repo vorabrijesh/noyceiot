@@ -55,7 +55,7 @@ optimized_output_tensor_to_array = np.array(output_tensor)[0,:,:]#output_tensor[
 print("TensorRT stats on benign test examples with inference in {:.2f} ms.".format( elapsed_time*time_weight))
 process_results(optimized_output_tensor_to_array, y_test)
 
-input_tensor=tf.constant(x_test_adv)
+input_tensor=tf.constant(x_test_adv.astype('float32'))
 output_tensor = frozen_func(input_tensor)
 start_time=time.time()
 output_tensor = frozen_func(input_tensor)
