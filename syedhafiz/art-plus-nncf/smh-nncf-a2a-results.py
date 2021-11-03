@@ -31,6 +31,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.applications import ResNet50
 from art.estimators.classification import KerasClassifier
 from art.attacks.evasion import DeepFool, FastGradientMethod
+tf.compat.v1.disable_eager_execution()
 # original_stdout = sys.stdout 
 # f = open("output-tensorrt-results.txt", "a")
 # sys.stdout = f
@@ -76,9 +77,9 @@ compressed_model=tf.keras.models.load_model('compressed_model.h5')
 classifier = KerasClassifier(model=compressed_model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
 attack = FastGradientMethod(estimator=classifier, eps=0.2)
 x_test_adv = attack.generate(x_test)
-classifier.predict(input_tensor)
+classifier.predict(x_test)
 start_time=time.time()
-predictions = classifier.predict(input_tensor)
+predictions = classifier.predict(x_test)
 end_time = time.time()
 elapsed_time = end_time - start_time
 print("NNCF stats on benign test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
@@ -86,7 +87,7 @@ process_results(predictions, y_test)
 
 input_tensor=tf.constant(x_test_adv.astype('float32'))
 start_time=time.time()
-predictions = classifier.predict(input_tensor)
+predictions = classifier.predict(x_test_adv)
 end_time = time.time()
 elapsed_time = end_time - start_time
 print("NNCF stats on adversarial test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
