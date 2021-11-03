@@ -2,12 +2,10 @@
 
 # usage: ./scripting-auto.sh <abs_path_to_art_lib> <abs_path_to_venv> <train - 0/1>
 
-art_library_path=$1
-art_venv_path=$2
-nncf_venv_path=$3
-train_flag=$4
-attack_flag=$5
-json_path=$6
+art_nncf_venv_path=$1
+train_flag=$2
+attack_flag=$3
+json_path=$4
 
 # echo "${art_library_path} ${art_venv_path}"
 
@@ -50,7 +48,7 @@ do
     CLASSIFIER_FILE_PREFIX="classifier-${MODEL_NAME[$MODEL_INDEX]}-${DATASET[$DATASET_INDEX]}-on-${N_TRAINING_SAMPLES}"
      
     if [ $train_flag -eq 1 ]; then
-        source "${art_venv_path}bin/activate" #/home/shafiz/ART/ART-venv-default/bin/activate
+        source "${art_nncf_venv_path}bin/activate" #/home/shafiz/ART/ART-venv-default/bin/activate
         python3 smh-train-classifier.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
         deactivate
     fi 
@@ -60,13 +58,13 @@ do
         echo -e "\n\nFed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
         #update the path to your python-3-created virtual environment
         if [ $attack_flag -eq 1 ]; then
-            source "${art_venv_path}bin/activate"
+            source "${art_nncf_venv_path}bin/activate"
             python3 smh-subset-of-test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
             python3 smh-attack-and-adv-examples.py $CLASSIFIER_FILE_PREFIX ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_TESTING_SAMPLES >> $PRINT_OUTPUT_FILE
             deactivate
         fi 
 
-        source "${nncf_venv_path}bin/activate"
+        source "${art_nncf_venv_path}bin/activate"
         python3 smh-subset-of-test-adv.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
         # python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
         python3 smh-nncf-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_path $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
