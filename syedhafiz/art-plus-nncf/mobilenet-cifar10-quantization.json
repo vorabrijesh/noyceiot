@@ -1,11 +1,11 @@
 {
-    "model": "ResNet50",
+    "model": "MobileNet",
     "pretrained": true,
     "input_info": {
         "sample_size": [1, 32, 32, 3]
     },
     "batch_size": 128,
-    "epochs": 2,
+    "epochs": 10,
     "optimizer": {
         "type": "Adam",
         "schedule_type": "piecewise_constant",
