@@ -28,13 +28,13 @@ TRT_INPUT_1D=32
 DATASET=(cifar10 imagenet)
 MODEL_NAME=(MobileNet DenseNet121 VGG19 ResNet50)
 
-ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod NewtonFool TargetedUniversalPerturbation)
+ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod NewtonFool TargetedUniversalPerturbation BrendelBethge SaliencyMapMethod)
 
 DATASET_INDEX=0
 MODEL_INDEX_START=0
 MODEL_INDEX_END=0
-ATTACK_INDEX_START=10
-ATTACK_INDEX_END=10
+ATTACK_INDEX_START=13
+ATTACK_INDEX_END=13
 
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 

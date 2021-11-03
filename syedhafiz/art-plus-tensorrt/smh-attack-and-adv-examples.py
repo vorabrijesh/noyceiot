@@ -6,6 +6,7 @@ from art.attacks.evasion.iterative_method import BasicIterativeMethod
 from art.attacks.evasion.elastic_net import ElasticNet
 from art.attacks.evasion.adversarial_patch.adversarial_patch import AdversarialPatch
 from art.attacks.evasion.targeted_universal_perturbation import TargetedUniversalPerturbation
+from art.attacks.evasion.saliency_map import SaliencyMapMethod
 from smh_utility_process_results import process_results
 import tensorflow as tf
 
@@ -45,7 +46,8 @@ import sys
 print('# '*50+str(time.ctime())+' :: smh-attack-and-adv-examples')
 
 ATTACK_NAME={"CW":"CarliniWagner", "DF":"Deepfool", "FGSM":"FastGradientMethod", "APGD":"AutoProjectedGradientDescent", "SA":"ShadowAttack", "WS":"Wasserstein",
-            "EN":"ElasticNet","ADP":"AdversarialPatch", "BIM":"BasicIterativeMethod", "UP":"UniversalPerturbation","NF":"NewtonFool","TUP":"TargetedUniversalPerturbation"}
+            "EN":"ElasticNet","ADP":"AdversarialPatch", "BIM":"BasicIterativeMethod", "UP":"UniversalPerturbation","NF":"NewtonFool","TUP":"TargetedUniversalPerturbation",
+            "BB":"BrendelBethge","SM":"SaliencyMapMethod"}
 tmpdir = os.getcwd()
 time_weight=1000
 # # Step 2: Load Model
@@ -104,12 +106,38 @@ elif attack_name==ATTACK_NAME.get("TUP"):
     for i in range(len(x_test)):
         y_target[i, target] = 1.0
     flag_TUP_Attack=True
+# elif attack_name==ATTACK_NAME.get("BB"):
+#     attack = BrendelBethgeAttack(
+#             estimator=classifier,
+#             targeted=True,
+#             overshoot=1.1,
+#             steps=1,
+#             lr=1e-3,
+#             lr_decay=0.5,
+#             lr_num_decay=20,
+#             momentum=0.8,
+#             binary_search_steps=1,
+#             init_size=5,
+#             batch_size=32,
+#         )
+#     target = 0
+#     y_target = np.zeros([len(x_test), 10])
+#     for i in range(len(x_test)):
+#         y_target[i, target] = 1.0
+#     flag_BB_Attack=True
+
+# Non-targeted saliency attack
+elif attack_name==ATTACK_NAME.get("SM"):
+    attack = SaliencyMapMethod(classifier, theta=1, batch_size=100, verbose=True)
+
 elif attack_name==ATTACK_NAME.get("WS"):
     attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
 
 start_time=time.time()
 if flag_TUP_Attack==True:
     x_test_adv = attack.generate(x_test,y=y_target)
+# elif flag_BB_Attack==True:
+#     x_test_adv = attack.generate(x=x_test,y=y_target)
 else:
     x_test_adv = attack.generate(x_test)
 end_time = time.time()
