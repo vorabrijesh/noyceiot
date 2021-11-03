@@ -6,6 +6,7 @@ from art.attacks.evasion.iterative_method import BasicIterativeMethod
 from art.attacks.evasion.elastic_net import ElasticNet
 from art.attacks.evasion.adversarial_patch.adversarial_patch import AdversarialPatch
 from art.attacks.evasion.targeted_universal_perturbation import TargetedUniversalPerturbation
+from art.attacks.evasion.saliency_map import SaliencyMapMethod
 from smh_utility_process_results import process_results
 import tensorflow as tf
 
