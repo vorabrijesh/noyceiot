@@ -15,7 +15,7 @@ N_PER_CLASS_TRAINING_SAMPLES=5000
 N_BATCH_SIZE=128
 N_EPOCHS=20
 
-N_PER_CLASS_TESTING_SAMPLES=10
+N_PER_CLASS_TESTING_SAMPLES=8
 
 N_PER_CLASS_ADV_SAMPLES=$N_PER_CLASS_TESTING_SAMPLES
 
@@ -26,7 +26,7 @@ N_ADV_SAMPLES=$(($N_PER_CLASS_ADV_SAMPLES*$N_CLASSES))
 TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
-MODEL_NAME=(VGG19 ResNet50 MobileNet DenseNet121)
+MODEL_NAME=(MobileNet DenseNet121 VGG19 ResNet50)
 
 ATTACK_NAME=(CarliniWagner Deepfool FastGradientMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod NewtonFool TargetedUniversalPerturbation BrendelBethge SaliencyMapMethod)
 
@@ -56,7 +56,7 @@ do
 
     for (( ATTACK_INDEX=${ATTACK_INDEX_START}; ATTACK_INDEX<${ATTACK_INDEX_END}+1; ATTACK_INDEX++ ))
     do
-        echo "Fed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
+        echo "\n\n\nFed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
         #update the path to your python-3-created virtual environment
         #source /home/shafiz/ART/ART-venv-default/bin/activate
         source "${venv_path}bin/activate"
@@ -65,8 +65,8 @@ do
         deactivate
 
         python3 smh-subset-of-test-adv.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
-        #python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
-        #python3 smh-tensorrt-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
+        python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
+        python3 smh-tensorrt-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
     done
 done
 echo "Done!"
