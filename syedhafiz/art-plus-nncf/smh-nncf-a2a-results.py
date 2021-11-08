@@ -73,7 +73,7 @@ y_test = np.load(dataset_name+'-y-test-to-tensorrt-'+str(n_test_adv_samples_subs
 # compression_ctrl, compressed_model = create_compressed_model(pretrained_model, nncf_config)
 
 input_tensor=tf.constant(x_test.astype('float32'))
-compressed_model=tf.keras.models.load_model('compressed_model.h5')
+compressed_model=tf.keras.models.load_model("compressed-"+keras_file_name+".h5")
 classifier = KerasClassifier(model=compressed_model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
 attack = FastGradientMethod(estimator=classifier, eps=0.2)
 x_test_adv = attack.generate(x_test)
@@ -92,5 +92,3 @@ end_time = time.time()
 elapsed_time = end_time - start_time
 print("NNCF stats on adversarial test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
 process_results(predictions, y_test)
-
-# compression_ctrl.export_model("compressed_model.h5", save_format='h5')

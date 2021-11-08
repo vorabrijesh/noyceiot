@@ -87,3 +87,5 @@ end_time = time.time()
 elapsed_time = end_time - start_time
 print("NNCF stats on adversarial test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
 process_results(predictions, y_test)
+
+compression_ctrl.export_model("compressed-"+keras_file_name+".h5", save_format='h5')
