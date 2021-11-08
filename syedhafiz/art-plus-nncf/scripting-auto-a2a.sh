@@ -34,8 +34,8 @@ ATTACK_NAME=(FastGradientMethod Deepfool ElasticNet Wasserstein AdversarialPatch
 DATASET_INDEX=0
 MODEL_INDEX_START=3
 MODEL_INDEX_END=3
-ATTACK_INDEX_START=0
-ATTACK_INDEX_END=0
+ATTACK_INDEX_START=1
+ATTACK_INDEX_END=1
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 
 
@@ -56,7 +56,6 @@ do
     for (( ATTACK_INDEX=${ATTACK_INDEX_START}; ATTACK_INDEX<${ATTACK_INDEX_END}+1; ATTACK_INDEX++ ))
     do
         echo -e "\n\nFed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
-        #update the path to your python-3-created virtual environment
         if [ $attack_flag -eq 1 ]; then
             source "${art_nncf_venv_path}bin/activate"
             python3 smh-subset-of-test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
@@ -67,7 +66,8 @@ do
         source "${art_nncf_venv_path}bin/activate"
         python3 smh-subset-of-test-adv.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
         # python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
-        python3 smh-nncf-a2a-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_path $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
+        python3 smh-nncf-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_path $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
+        python3 smh-nncf-a2a-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
         deactivate
     done
 done

@@ -44,8 +44,8 @@ model_name=str(sys.argv[2])
 attack_name=str(sys.argv[3])
 n_test_adv_samples_subset=int(sys.argv[4])
 keras_file_name=str(sys.argv[5])
-json_path = str(sys.argv[6])
-batch_size = int(sys.argv[7])
+# json_path = str(sys.argv[6])
+# batch_size = int(sys.argv[7])
 
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
