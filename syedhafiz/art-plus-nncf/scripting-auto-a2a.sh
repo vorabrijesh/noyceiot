@@ -12,7 +12,7 @@ json_path=$4
 # sleep 400
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$art_library_path #$LD_LIBRARY_PATH:/home/shafiz/ART/adversarial-robustness-toolbox/
 
-N_PER_CLASS_TRAINING_SAMPLES=50000
+N_PER_CLASS_TRAINING_SAMPLES=5000
 N_BATCH_SIZE=128
 N_EPOCHS=10
 
