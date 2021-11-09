@@ -1,5 +1,5 @@
 {
-    "model": "MobileNet",
+    "model": "DenseNet121",
     "pretrained": true,
     "input_info": {
         "sample_size": [1, 32, 32, 3]
@@ -7,7 +7,7 @@
     "batch_size": 128,
     "epochs": 10,
     "optimizer": {
-        "type": "adam",
+        "type": "sgd",
         "schedule_type": "multistep",
         "schedule_params": {
             "base_lr": 0.1,
@@ -27,9 +27,9 @@
         "pruning_init": 0.1,
         "params": {
             "schedule": "exponential",
-            "pruning_target": 0.4,
+            "pruning_target": 0.5,
             "pruning_steps": 15,
-            "filter_importance": "geometric_median"
+            "filter_importance": "L1"
         }
     }
 }
