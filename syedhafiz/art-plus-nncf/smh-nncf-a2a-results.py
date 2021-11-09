@@ -30,12 +30,21 @@ from sklearn.metrics import classification_report
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.applications import ResNet50
 from art.estimators.classification import KerasClassifier
-from art.attacks.evasion import DeepFool, FastGradientMethod
+from art.attacks.attack import Attack
+from art.attacks.evasion.auto_attack import AutoAttack
+from art.attacks.evasion.carlini import CarliniL0Method, CarliniLInfMethod, CarliniL2Method
+from art.attacks.evasion import DeepFool, FastGradientMethod, AutoProjectedGradientDescent, ShadowAttack, Wasserstein, BrendelBethgeAttack, ShapeShifter, UniversalPerturbation, NewtonFool
+from art.attacks.evasion.iterative_method import BasicIterativeMethod
+from art.attacks.evasion.elastic_net import ElasticNet
+from art.attacks.evasion.adversarial_patch.adversarial_patch import AdversarialPatch
+from art.attacks.evasion.targeted_universal_perturbation import TargetedUniversalPerturbation
 tf.compat.v1.disable_eager_execution()
 # original_stdout = sys.stdout 
 # f = open("output-tensorrt-results.txt", "a")
 # sys.stdout = f
-print('# '*50+str(time.ctime())+' :: tensorrt-results')
+print('# '*50+str(time.ctime())+' :: nncf-a2a-results')
+ATTACK_NAME={"CW":"CarliniWagner", "DF":"Deepfool", "FGSM":"FastGradientMethod", "APGD":"AutoProjectedGradientDescent", "SA":"ShadowAttack", "WS":"Wasserstein",
+            "EN":"ElasticNet","ADP":"AdversarialPatch", "BIM":"BasicIterativeMethod", "UP":"UniversalPerturbation","NF":"NewtonFool","TUP":"TargetedUniversalPerturbation"}
 
 time_weight=1000
 tmpdir = os.getcwd()
@@ -44,7 +53,7 @@ model_name=str(sys.argv[2])
 attack_name=str(sys.argv[3])
 n_test_adv_samples_subset=int(sys.argv[4])
 keras_file_name=str(sys.argv[5])
-# json_path = str(sys.argv[6])
+json_path = str(sys.argv[6])
 # batch_size = int(sys.argv[7])
 
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
@@ -55,28 +64,46 @@ for device in physical_devices:
 dataset_name+'-x-test-to-tensorrt-'+str(n_test_adv_samples_subset)
 x_test = np.load(dataset_name+'-x-test-to-tensorrt-'+str(n_test_adv_samples_subset)+'.npy')
 y_test = np.load(dataset_name+'-y-test-to-tensorrt-'+str(n_test_adv_samples_subset)+'.npy')
-# x_test_adv = np.load(dataset_name+'-'+model_name+'-'+attack_name+'-x-test-adv-to-tensorrt-'+str(n_test_adv_samples_subset)+'.npy')
-
-# nncf_config = NNCFConfig.from_json(json_path)
-
-# (train_images, train_labels), _ = cifar10.load_data()
-# train_images = train_images / 255.0
-# print("Train image object: {}, Train label object: {}".format(train_images.shape, train_labels.shape))
-# train_labels = to_categorical(train_labels)
-# print("Train image object: {}, Train label object: {}".format(train_images.shape, train_labels.shape))
-
-# train_dataset = tf.data.Dataset.from_tensor_slices((tf.cast(train_images, tf.float32),tf.cast(train_labels, tf.int64)))
-# train_dataset = train_dataset.batch(batch_size)
-
-# pretrained_model = tf.keras.models.load_model(keras_file_name+'.h5')
-# nncf_config = register_default_init_args(nncf_config, train_dataset, batch_size=batch_size)
-# compression_ctrl, compressed_model = create_compressed_model(pretrained_model, nncf_config)
 
 input_tensor=tf.constant(x_test.astype('float32'))
-compressed_model=tf.keras.models.load_model("compressed-"+keras_file_name+".h5")
+optimization_str = json_path.split('/')[-1].split('.')[0]
+compressed_model=tf.keras.models.load_model(optimization_str+'-'+keras_file_name+".h5")
 classifier = KerasClassifier(model=compressed_model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
-attack = FastGradientMethod(estimator=classifier, eps=0.2)
-x_test_adv = attack.generate(x_test)
+flag_TUP_Attack=False
+if attack_name==ATTACK_NAME.get("CW"):
+    attack = CarliniL2Method(classifier=classifier)
+elif attack_name==ATTACK_NAME.get("DF"):
+    attack = DeepFool(classifier=classifier, max_iter=5, batch_size=128, verbose=True)
+elif attack_name==ATTACK_NAME.get("FGSM"):
+    attack = FastGradientMethod(estimator=classifier, eps=0.2)
+elif attack_name==ATTACK_NAME.get("EN"):
+    attack = ElasticNet(classifier=classifier,targeted=False, max_iter=2, verbose=True)
+elif attack_name==ATTACK_NAME.get("ADP"):
+    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5, scale_min=0.4, scale_max=0.41, learning_rate=5.0, batch_size=10, max_iter=5, verbose=True)
+elif attack_name==ATTACK_NAME.get("NF"):
+    attack = NewtonFool(classifier,max_iter=5, batch_size=128, verbose=True)
+elif attack_name==ATTACK_NAME.get("BIM"):
+    attack = BasicIterativeMethod(classifier,eps=1.0, eps_step=0.1, batch_size=128, verbose=True)
+elif attack_name==ATTACK_NAME.get("UP"):
+    attack = UniversalPerturbation(classifier,max_iter=1,attacker="ead",attacker_params={"max_iter": 2, "targeted": False, "verbose": True},verbose=True)
+elif attack_name==ATTACK_NAME.get("TUP"):
+    attack = TargetedUniversalPerturbation(classifier,max_iter=1, attacker="fgsm", attacker_params={"eps": 0.3, "targeted": True, "verbose": True})
+    target = 0
+    y_target = np.zeros([len(x_test), 10])
+    for i in range(len(x_test)):
+        y_target[i, target] = 1.0
+    flag_TUP_Attack=True
+elif attack_name==ATTACK_NAME.get("WS"):
+    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
+start_time=time.time()
+if flag_TUP_Attack==True:
+    x_test_adv = attack.generate(x_test,y=y_target)
+else:
+    x_test_adv = attack.generate(x_test)
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(attack_name+":: Adversarial examples on NNCF-optimized model generation time: {:.2f} ms.".format(elapsed_time*time_weight))
+
 classifier.predict(x_test)
 start_time=time.time()
 predictions = classifier.predict(x_test)

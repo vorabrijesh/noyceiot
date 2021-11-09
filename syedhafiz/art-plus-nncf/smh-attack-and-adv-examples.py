@@ -20,7 +20,7 @@ from art.estimators.classification import KerasClassifier
 from art.utils import load_mnist, to_categorical
 from art.utils import load_cifar10
 from tests.utils import get_image_classifier_tf, get_image_classifier_kr
-
+from tensorflow.keras import backend as K
 import time
 
 import warnings
@@ -54,7 +54,7 @@ dataset_name=str(sys.argv[2])
 model_name=str(sys.argv[3])
 attack_name=str(sys.argv[4])
 n_test_samples=int(sys.argv[5])
-
+K.clear_session()
 model = tf.keras.models.load_model(keras_file_name+'.h5')
 x_test = np.load(dataset_name+'-x-test-'+str(n_test_samples)+'.npy')
 y_test = np.load(dataset_name+'-y-test-'+str(n_test_samples)+'.npy')
