@@ -28,14 +28,15 @@ TRT_INPUT_1D=32
 
 DATASET=(cifar10 imagenet)
 MODEL_NAME=(MobileNet DenseNet121 VGG19 ResNet50)
+MODEL_NAME_LOWER=(mobilenet densenet121 vgg19 resnet50)
 
-ATTACK_NAME=(FastGradientMethod Deepfool ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack UniversalPerturbation BasicIterativeMethod NewtonFool TargetedUniversalPerturbation CarliniWagner)
+ATTACK_NAME=(FastGradientMethod Deepfool UniversalPerturbation BasicIterativeMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack NewtonFool TargetedUniversalPerturbation CarliniWagner)
 
 DATASET_INDEX=0
-MODEL_INDEX_START=3
+MODEL_INDEX_START=0
 MODEL_INDEX_END=3
 ATTACK_INDEX_START=0
-ATTACK_INDEX_END=0
+ATTACK_INDEX_END=4
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 
 
@@ -49,14 +50,13 @@ do
      
     if [ $train_flag -eq 1 ]; then
         source "${art_nncf_venv_path}bin/activate" #/home/shafiz/ART/ART-venv-default/bin/activate
-        python3 smh-train-classifier.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
+        python3 smh-train-classifier-a2a.py $N_TRAINING_SAMPLES $N_BATCH_SIZE $N_EPOCHS $CLASSIFIER_FILE_PREFIX ${MODEL_NAME[$MODEL_INDEX]} >> $PRINT_OUTPUT_FILE
         deactivate
     fi 
 
     for (( ATTACK_INDEX=${ATTACK_INDEX_START}; ATTACK_INDEX<${ATTACK_INDEX_END}+1; ATTACK_INDEX++ ))
     do
         echo -e "\n\nFed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
-        #update the path to your python-3-created virtual environment
         if [ $attack_flag -eq 1 ]; then
             source "${art_nncf_venv_path}bin/activate"
             python3 smh-subset-of-test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
@@ -66,8 +66,10 @@ do
 
         source "${art_nncf_venv_path}bin/activate"
         python3 smh-subset-of-test-adv.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES >> $PRINT_OUTPUT_FILE
-        # python3 smh-keras-to-tensorrt.py $TRT_INPUT_1D ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX >> $PRINT_OUTPUT_FILE
-        python3 smh-nncf-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_path $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
+        json_file="${json_path}${MODEL_NAME[$MODEL_INDEX]}/${MODEL_NAME_LOWER[$MODEL_INDEX]}-${DATASET[$DATASET_INDEX]}-pruning_50%_L2.json"
+        echo $json_file
+        python3 smh-nncf-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_file $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
+        python3 smh-nncf-a2a-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_file >> $PRINT_OUTPUT_FILE
         deactivate
     done
 done
