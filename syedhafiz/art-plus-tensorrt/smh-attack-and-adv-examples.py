@@ -131,7 +131,7 @@ elif attack_name==ATTACK_NAME.get("SM"):
     attack = SaliencyMapMethod(classifier, theta=1, batch_size=100, verbose=True)
 
 elif attack_name==ATTACK_NAME.get("WS"):
-    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
+    attack = Wasserstein(classifier,regularization=1,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
 
 start_time=time.time()
 if flag_TUP_Attack==True:
