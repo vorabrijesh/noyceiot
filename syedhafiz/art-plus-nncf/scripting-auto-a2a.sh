@@ -35,7 +35,7 @@ ATTACK_NAME=(FastGradientMethod Deepfool UniversalPerturbation BasicIterativeMet
 DATASET_INDEX=0
 MODEL_INDEX_START=0
 MODEL_INDEX_END=3
-ATTACK_INDEX_START=0
+ATTACK_INDEX_START=2
 ATTACK_INDEX_END=4
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 

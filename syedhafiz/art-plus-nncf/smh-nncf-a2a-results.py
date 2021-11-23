@@ -102,6 +102,8 @@ else:
     x_test_adv = attack.generate(x_test)
 end_time = time.time()
 elapsed_time = end_time - start_time
+np.save(dataset_name+'-'+optimization_str+"-"+model_name+'-'+attack_name+'-x-test-adv-'+str(n_test_adv_samples_subset),x_test_adv)
+
 print(attack_name+":: Adversarial examples on NNCF-optimized model generation time: {:.2f} ms.".format(elapsed_time*time_weight))
 
 classifier.predict(x_test)
@@ -118,4 +120,14 @@ predictions = classifier.predict(x_test_adv)
 end_time = time.time()
 elapsed_time = end_time - start_time
 print("NNCF stats on adversarial test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
+process_results(predictions, y_test)
+
+full_bone_model = tf.keras.models.load_model(keras_file_name+'.h5')
+full_bone_classifier = KerasClassifier(model=full_bone_model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
+full_bone_classifier.predict(x_test_adv)
+start_time=time.time()
+predictions = full_bone_classifier.predict(x_test_adv)
+end_time = time.time()
+elapsed_time = end_time - start_time
+print("Full-bone stats on adversarial test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
 process_results(predictions, y_test)
