@@ -60,11 +60,11 @@ process_results(predictions, y_test)
 # Step 6: Generate adversarial test examples
 flag_TUP_Attack=False
 if attack_name==ATTACK_NAME.get("APGD"):
-    attack = AutoProjectedGradientDescent(estimator=classifier,eps=0.3,eps_step=0.1,max_iter=5,targeted=False,nb_random_init=1,batch_size=32,verbose=True)
+    attack = AutoProjectedGradientDescent(estimator=classifier,eps=0.3,eps_step=0.1,max_iter=5,targeted=False,nb_random_init=1,batch_size=128,verbose=True)
 # elif attack_name==ATTACK_NAME.get("AA"):
     # attack = AutoAttack(estimator=classifier, norm=np.inf, eps=0.3, eps_step=0.1, attacks=None, batch_size=128, estimator_orig=None)
 elif attack_name==ATTACK_NAME.get("WS"):
-    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
+    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=128,verbose=True)
 
 start_time=time.time()
 x_test_adv = attack.generate(x_test)
