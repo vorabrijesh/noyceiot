@@ -54,7 +54,7 @@ attack_name=str(sys.argv[3])
 n_test_adv_samples_subset=int(sys.argv[4])
 keras_file_name=str(sys.argv[5])
 json_path = str(sys.argv[6])
-# batch_size = int(sys.argv[7])
+batch_size = int(sys.argv[7])
 
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
@@ -71,19 +71,19 @@ compressed_model=tf.keras.models.load_model(optimization_str+'-'+keras_file_name
 classifier = KerasClassifier(model=compressed_model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
 flag_TUP_Attack=False
 if attack_name==ATTACK_NAME.get("CW"):
-    attack = CarliniL2Method(classifier=classifier)
+    attack = CarliniL2Method(classifier=classifier, max_iter=10, batch_size=batch_size, verbose=True)
 elif attack_name==ATTACK_NAME.get("DF"):
-    attack = DeepFool(classifier=classifier, max_iter=5, batch_size=128, verbose=True)
+    attack = DeepFool(classifier=classifier, max_iter=5, batch_size=batch_size, verbose=True)
 elif attack_name==ATTACK_NAME.get("FGSM"):
     attack = FastGradientMethod(estimator=classifier, eps=0.2)
 elif attack_name==ATTACK_NAME.get("EN"):
     attack = ElasticNet(classifier=classifier,targeted=False, max_iter=2, verbose=True)
 elif attack_name==ATTACK_NAME.get("ADP"):
-    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5, scale_min=0.4, scale_max=0.41, learning_rate=5.0, batch_size=10, max_iter=5, verbose=True)
+    attack = AdversarialPatch(classifier=classifier,rotation_max=0.5, scale_min=0.4, scale_max=0.41, learning_rate=5.0, batch_size=batch_size, max_iter=5, verbose=True)
 elif attack_name==ATTACK_NAME.get("NF"):
-    attack = NewtonFool(classifier,max_iter=5, batch_size=128, verbose=True)
+    attack = NewtonFool(classifier,max_iter=5, batch_size=batch_size, verbose=True)
 elif attack_name==ATTACK_NAME.get("BIM"):
-    attack = BasicIterativeMethod(classifier,eps=1.0, eps_step=0.1, batch_size=128, verbose=True)
+    attack = BasicIterativeMethod(classifier,eps=1.0, eps_step=0.1, batch_size=batch_size, verbose=True)
 elif attack_name==ATTACK_NAME.get("UP"):
     attack = UniversalPerturbation(classifier,max_iter=1,attacker="ead",attacker_params={"max_iter": 2, "targeted": False, "verbose": True},verbose=True)
 elif attack_name==ATTACK_NAME.get("TUP"):
@@ -94,7 +94,7 @@ elif attack_name==ATTACK_NAME.get("TUP"):
         y_target[i, target] = 1.0
     flag_TUP_Attack=True
 elif attack_name==ATTACK_NAME.get("WS"):
-    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=5,verbose=True)
+    attack = Wasserstein(classifier,regularization=100,conjugate_sinkhorn_max_iter=5, projected_sinkhorn_max_iter=5,norm="wasserstein",ball="wasserstein",targeted=False,p=2,eps_iter=2,eps_factor=1.05,eps_step=0.1,kernel_size=5,batch_size=batch_size,verbose=True)
 start_time=time.time()
 if flag_TUP_Attack==True:
     x_test_adv = attack.generate(x_test,y=y_target)

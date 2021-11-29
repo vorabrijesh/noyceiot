@@ -30,13 +30,13 @@ DATASET=(cifar10 imagenet)
 MODEL_NAME=(MobileNet DenseNet121 VGG19 ResNet50)
 MODEL_NAME_LOWER=(mobilenet densenet121 vgg19 resnet50)
 
-ATTACK_NAME=(FastGradientMethod Deepfool UniversalPerturbation BasicIterativeMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack NewtonFool TargetedUniversalPerturbation CarliniWagner)
+ATTACK_NAME=(CarliniWagner FastGradientMethod Deepfool UniversalPerturbation BasicIterativeMethod ElasticNet Wasserstein AdversarialPatch AutoProjectedGradientDescent ShadowAttack NewtonFool TargetedUniversalPerturbation CarliniWagner)
 
 DATASET_INDEX=0
 MODEL_INDEX_START=0
 MODEL_INDEX_END=3
-ATTACK_INDEX_START=2
-ATTACK_INDEX_END=4
+ATTACK_INDEX_START=0
+ATTACK_INDEX_END=0
 
 CTIME="`date +%b-%d-%Y-%H-%M-%p`" 
 
@@ -60,7 +60,7 @@ do
         if [ $attack_flag -eq 1 ]; then
             source "${art_nncf_venv_path}bin/activate"
             python3 smh-subset-of-test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
-            python3 smh-attack-and-adv-examples.py $CLASSIFIER_FILE_PREFIX ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_TESTING_SAMPLES >> $PRINT_OUTPUT_FILE
+            python3 smh-attack-and-adv-examples.py $CLASSIFIER_FILE_PREFIX ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_TESTING_SAMPLES $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
             deactivate
         fi 
 
@@ -69,7 +69,7 @@ do
         json_file="${json_path}${MODEL_NAME[$MODEL_INDEX]}/${MODEL_NAME_LOWER[$MODEL_INDEX]}-${DATASET[$DATASET_INDEX]}-pruning_50%_L2.json"
         echo $json_file
         python3 smh-nncf-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_file $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
-        python3 smh-nncf-a2a-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_file >> $PRINT_OUTPUT_FILE
+        python3 smh-nncf-a2a-results.py ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_ADV_SAMPLES $CLASSIFIER_FILE_PREFIX $json_file $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
         deactivate
     done
 done
