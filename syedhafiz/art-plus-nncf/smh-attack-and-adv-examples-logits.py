@@ -40,7 +40,7 @@ model_name=str(sys.argv[3])
 attack_name=str(sys.argv[4])
 n_test_samples=int(sys.argv[5])
 K.clear_session()
-model = tf.keras.models.load_model(keras_file_name+'.h5')
+model = tf.keras.models.load_model(keras_file_name+'_logits.h5')
 x_test = np.load(dataset_name+'-x-test-'+str(n_test_samples)+'.npy')
 y_test = np.load(dataset_name+'-y-test-'+str(n_test_samples)+'.npy')
 

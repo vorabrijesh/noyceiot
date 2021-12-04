@@ -43,7 +43,7 @@ tf.compat.v1.disable_eager_execution()
 # f = open("output-tensorrt-results.txt", "a")
 # sys.stdout = f
 print('# '*50+str(time.ctime())+' :: nncf-a2a-results')
-ATTACK_NAME={"APGD":"AutoProjectedGradientDescent", "WS":"Wasserstein")
+ATTACK_NAME={"APGD":"AutoProjectedGradientDescent", "WS":"Wasserstein"}
 
 time_weight=1000
 tmpdir = os.getcwd()
@@ -66,8 +66,18 @@ y_test = np.load(dataset_name+'-y-test-to-tensorrt-'+str(n_test_adv_samples_subs
 
 input_tensor=tf.constant(x_test.astype('float32'))
 optimization_str = json_path.split('/')[-1].split('.')[0]
-compressed_model=tf.keras.models.load_model(optimization_str+'-'+keras_file_name+".h5")
+compressed_model=tf.keras.models.load_model(optimization_str+'-'+keras_file_name+"_logits.h5")
 classifier = KerasClassifier(model=compressed_model,clip_values=(0, 1), use_logits=True)#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
+classifier.predict(x_test)
+start_time=time.time()
+predictions = classifier.predict(x_test)
+end_time = time.time()
+elapsed_time = end_time - start_time
+print("NNCF stats on benign test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
+predictions = tf.round(tf.nn.softmax(predictions))
+predictions = predictions.eval(session=tf.compat.v1.Session())
+process_results(predictions, y_test)
+
 if attack_name==ATTACK_NAME.get("APGD"):
     attack = AutoProjectedGradientDescent(estimator=classifier,eps=0.3,eps_step=0.1,max_iter=5,targeted=False,nb_random_init=1,batch_size=batch_size,verbose=True)
 elif attack_name==ATTACK_NAME.get("WS"):
@@ -80,16 +90,6 @@ elapsed_time = end_time - start_time
 np.save(dataset_name+'-'+optimization_str+"-"+model_name+'-'+attack_name+'-x-test-adv-'+str(n_test_adv_samples_subset),x_test_adv)
 
 print(attack_name+":: Adversarial examples on NNCF-optimized model generation time: {:.2f} ms.".format(elapsed_time*time_weight))
-
-classifier.predict(x_test)
-start_time=time.time()
-predictions = classifier.predict(x_test)
-end_time = time.time()
-elapsed_time = end_time - start_time
-print("NNCF stats on benign test examples with inference in {:.2f} ms.".format(elapsed_time*time_weight))
-predictions = tf.round(tf.nn.softmax(predictions))
-predictions = predictions.eval(session=tf.compat.v1.Session())
-process_results(predictions, y_test)
 
 input_tensor=tf.constant(x_test_adv.astype('float32'))
 start_time=time.time()
