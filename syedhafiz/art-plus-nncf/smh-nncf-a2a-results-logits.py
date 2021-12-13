@@ -67,6 +67,7 @@ y_test = np.load(dataset_name+'-y-test-to-tensorrt-'+str(n_test_adv_samples_subs
 input_tensor=tf.constant(x_test.astype('float32'))
 optimization_str = json_path.split('/')[-1].split('.')[0]
 compressed_model=tf.keras.models.load_model(optimization_str+'-'+keras_file_name+"_logits.h5")
+compressed_model.compile(optimizer= 'adam',loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),metrics=["accuracy"])
 classifier = KerasClassifier(model=compressed_model,clip_values=(0, 1), use_logits=True)#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False
 classifier.predict(x_test)
 start_time=time.time()
