@@ -16,11 +16,17 @@ x_test_subset = []
 y_test_subset = []
 count = np.zeros(n_classes)
 t=0
-for y in y_test:
+
+# Randomly Shuffle dataset
+shuffler = np.random.permutation(len(y_test))
+y_test_shuffled = y_test[shuffler]
+x_test_shuffled = x_test[shuffler]
+
+for y in y_test_shuffled:
     pos = np.where(y==1)
     count[pos] =  count[pos]+1
     if count[pos]<=per_class_samples:
-        x_test_subset.append(x_test[t])
+        x_test_subset.append(x_test_shuffled[t])
         y_test_subset.append(y)
         # print(str(pos)+'::'+str(count[pos]))
     t = t+1
