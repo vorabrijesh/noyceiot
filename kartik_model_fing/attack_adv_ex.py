@@ -57,8 +57,8 @@ n_test_samples=int(sys.argv[5])
 batch_size = int(sys.argv[6])
 K.clear_session()
 model = tf.keras.models.load_model(keras_file_name+'.h5')
-x_test = np.load(dataset_name+'-x-test-'+str(n_test_samples)+'.npy')
-y_test = np.load(dataset_name+'-y-test-'+str(n_test_samples)+'.npy')
+x_test = np.load(dataset_name+'-'+model_name+'-'+attack_name+'-x-test-'+str(n_test_samples)+'.npy')
+y_test = np.load(dataset_name+'-'+model_name+'-'+attack_name+'-y-test-'+str(n_test_samples)+'.npy')
 
 
 classifier = KerasClassifier(model=model,clip_values=(0, 1))#, clip_values=(min_pixel_value, max_pixel_value), use_logits=False

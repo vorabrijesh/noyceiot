@@ -12,6 +12,7 @@ N_PER_CLASS_TRAINING_SAMPLES=5000
 N_BATCH_SIZE=128
 N_EPOCHS=20
 
+# 300 for VGGs, 200 for rest
 N_PER_CLASS_TESTING_SAMPLES=200
 
 N_PER_CLASS_ADV_SAMPLES=$N_PER_CLASS_TESTING_SAMPLES
@@ -28,16 +29,16 @@ DATASET=(cifar10)
 #PRUNE_TARGET=(0.50 0.30 0.10)
 #FILTER_IMPORTANCE=(L1 L2 geometric_median)
 
-# KArtik
-MODEL_NAME=(MobileNetV2 DenseNet169 ResNet50 EfficientNetB4 ResNet152)
+# Kartik (200 ea)
+MODEL_NAME=(MobileNetV2 DenseNet169 EfficientNetB4 ResNet152)
 
-# Syed
-# MODEL_NAME=(DenseNet121 DenseNet201 ResNet101 MobileNet MobileNetV3Large)
+# Syed (200 ea)
+# MODEL_NAME=(DenseNet121 DenseNet201 ResNet50 ResNet101 MobileNet MobileNetV3Large)
 
 # TODO after (for 300 per class)
-# MODEL_NAME=(VGG16 VGG19)
+#MODEL_NAME=(VGG16 VGG19)
 
-ATTACK_NAME=(FastGradientMethod AutoProjectedGradientDescent)
+ATTACK_NAME=(FastGradientMethod Deepfool)
 
 DATASET_INDEX=0
 
@@ -74,7 +75,7 @@ do
         echo -e "\n\nFed_adv: ${N_ADV_SAMPLES}, Attack: ${ATTACK_NAME[$ATTACK_INDEX]} ***** Attack Start ***** " >> $PRINT_OUTPUT_FILE
         if [ $attack_flag -eq 1 ]; then
             source "${art_nncf_venv_path}bin/activate"
-            python3 subset_of_test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} >> $PRINT_OUTPUT_FILE
+            python3 subset_of_test.py $N_PER_CLASS_TESTING_SAMPLES $N_CLASSES ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} >> $PRINT_OUTPUT_FILE
             python3 attack_adv_ex.py $CLASSIFIER_FILE_PREFIX ${DATASET[$DATASET_INDEX]} ${MODEL_NAME[$MODEL_INDEX]} ${ATTACK_NAME[$ATTACK_INDEX]} $N_TESTING_SAMPLES $N_BATCH_SIZE >> $PRINT_OUTPUT_FILE
             deactivate
         fi 
